@@ -1,9 +1,9 @@
 package domain
 
 import (
-	"ff/internal/domain/entity"
-	"ff/internal/domain/interfaces"
-	"ff/internal/errorutils"
+	"github.com/IsaacDSC/featureflag/internal/domain/entity"
+	"github.com/IsaacDSC/featureflag/internal/domain/interfaces"
+	"github.com/IsaacDSC/featureflag/internal/errorutils"
 )
 
 type FeatureflagService struct {

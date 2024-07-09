@@ -2,7 +2,7 @@ package dto
 
 import (
 	"errors"
-	"ff/internal/domain/entity"
+	"github.com/IsaacDSC/featureflag/internal/domain/entity"
 	"github.com/google/uuid"
 	"time"
 )

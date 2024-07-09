@@ -2,9 +2,9 @@ package web
 
 import (
 	"encoding/json"
-	"ff/internal/domain"
-	"ff/internal/dto"
-	"ff/internal/errorutils"
+	"github.com/IsaacDSC/featureflag/internal/domain"
+	"github.com/IsaacDSC/featureflag/internal/dto"
+	"github.com/IsaacDSC/featureflag/internal/errorutils"
 	"io"
 	"net/http"
 )

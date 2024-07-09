@@ -2,8 +2,8 @@ package infra
 
 import (
 	"encoding/json"
-	"ff/internal/domain/entity"
-	"ff/internal/errorutils"
+	"github.com/IsaacDSC/featureflag/internal/domain/entity"
+	"github.com/IsaacDSC/featureflag/internal/errorutils"
 	"os"
 )
 

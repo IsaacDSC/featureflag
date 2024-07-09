@@ -2,10 +2,10 @@ package domain
 
 import (
 	"errors"
-	"ff/internal/domain/entity"
-	"ff/internal/domain/interfaces"
-	"ff/internal/errorutils"
-	mock "ff/internal/mocks"
+	"github.com/IsaacDSC/featureflag/internal/domain/entity"
+	"github.com/IsaacDSC/featureflag/internal/domain/interfaces"
+	"github.com/IsaacDSC/featureflag/internal/errorutils"
+	mock "github.com/IsaacDSC/featureflag/internal/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"reflect"

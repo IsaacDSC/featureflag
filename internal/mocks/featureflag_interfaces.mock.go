@@ -5,7 +5,7 @@
 package mock
 
 import (
-	entity "ff/internal/domain/entity"
+	entity "github.com/IsaacDSC/featureflag/internal/domain/entity"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"

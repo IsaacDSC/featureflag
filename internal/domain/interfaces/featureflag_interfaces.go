@@ -1,6 +1,6 @@
 package interfaces
 
-import "ff/internal/domain/entity"
+import "github.com/IsaacDSC/featureflag/internal/domain/entity"
 
 type FeatureFlagRepository interface {
 	SaveFF(input entity.Featureflag) error
