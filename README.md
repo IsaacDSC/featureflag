@@ -9,32 +9,56 @@ docker run -p 3000:3000 isaacdsc/featureflag:v0.1
 ```
 
 ## SDK
-```
+```sh
 go get -u github.com/IsaacDSC/featureflag
 ```
 
 
 ## Configuration
-### Example 2
+### Example 1
+*Como criar uma ff*
 ```
-session_id: [01J29MKZ7H4V8A65M536CKQ5HG],
-percent: 50%,
+###
+PATCH http://localhost:3000/
+Accept: application/json
+Content-Type: application/json
 
-QUERO DIZER
-50% true -> session_id 01J29MKZ7H4V8A65M536CKQ5HG
-50% false -> session_id 01J29MKZ7H4V8A65M536CKQ5HG
+{
+  "flag_name": "teste1",
+  "active": true
+}
+```
+
+### Example 2
+*Como criar uma ff com 50% ou seja 50% das chamadas serão ativas e 50% das chamadas serão desativadas*
+```
+###
+PATCH http://localhost:3000/
+Accept: application/json
+Content-Type: application/json
+
+{
+  "flag_name": "teste1",
+  "active": true,
+  "strategy": {
+    "percent": 50
+  }
+}
 ```
 
 ### Example 3
-
+*Como criar uma ff com configurações utilizando sessions, onde somente quem estiver com a session receberá a feature flag como ligada*
 ```
-session_id: [01J29MKZ7H4V8A65M536CKQ5HG, 01J29MSCVVPH8CG6R0422NM3ME],
-percent: 50%,
+###
+PATCH http://localhost:3000/
+Accept: application/json
+Content-Type: application/json
 
-QUERO DIZER
-50% true -> session_id 01J29MKZ7H4V8A65M536CKQ5HG
-50% true -> session_id 01J29MSCVVPH8CG6R0422NM3ME
-50% false -> session_id <other>
+{
+  "flag_name": "teste3",
+  "active": true,
+  "strategy": {
+     "session_id": ["34eec623-c9f2-494e-bf66-57a85139fd69"]
+  }
+}
 ```
-
-mockgen -source=./internal/domain/interfaces/featureflag_interfaces.go -destination=./internal/mocks/featureflag_interfaces.mock.go -package=mock 
