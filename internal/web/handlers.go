@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"github.com/IsaacDSC/featureflag/internal/domain"
 	"github.com/IsaacDSC/featureflag/internal/dto"
-	"github.com/IsaacDSC/featureflag/internal/errorutils"
+	"github.com/IsaacDSC/featureflag/utils/authutils"
+	"github.com/IsaacDSC/featureflag/utils/ctxutils"
+	"github.com/IsaacDSC/featureflag/utils/errorutils"
 	"io"
 	"net/http"
+	"time"
 )
 
 type Handler struct {
@@ -18,10 +21,11 @@ func NewHandler(service *domain.FeatureflagService) *Handler {
 	handler := new(Handler)
 	handler.service = service
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		"PATCH /":       handler.createOrUpdate,
-		"DELETE /{key}": handler.delete,
-		"GET /":         handler.getAll,
-		"GET /{key}":    handler.get,
+		"PATCH /":       ClientServicePermission(Authorization(handler.createOrUpdate)),
+		"DELETE /{key}": ClientServicePermission(Authorization(handler.delete)),
+		"GET /":         ClientServicePermission(Authorization(handler.getAll)),
+		"GET /{key}":    SDKPermission(Authentication(handler.get)),
+		"POST /auth":    ClientServicePermission(Authorization(handler.auth)),
 	}
 
 	return handler
@@ -130,4 +134,19 @@ func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
+}
+
+func (h *Handler) auth(w http.ResponseWriter, r *http.Request) {
+	username := ctxutils.GetValueCtx(r.Context(), KEY)
+	token, err := authutils.CreateToken(username)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   token,
+		Expires: time.Now().Add(24 * time.Hour),
+	})
 }

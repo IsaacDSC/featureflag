@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/IsaacDSC/featureflag/internal/domain"
+	"github.com/IsaacDSC/featureflag/internal/env"
 	"github.com/IsaacDSC/featureflag/internal/infra"
 	"github.com/IsaacDSC/featureflag/internal/web"
 	"log"
@@ -18,13 +19,15 @@ func init() {
 }
 
 func main() {
+	env.Init()
+
 	repository := infra.NewFeatureFlagRepository()
 	service := domain.NewFeatureflagService(repository)
 
 	mux := http.NewServeMux()
 	handlers := web.NewHandler(service).GetRoutes()
 	for router, handler := range handlers {
-		mux.HandleFunc(router, web.ApplicationJSON(handler))
+		mux.HandleFunc(router, web.Authorization(handler))
 	}
 
 	if err := http.ListenAndServe(":3000", mux); err != nil {
