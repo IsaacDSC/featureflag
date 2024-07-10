@@ -3,7 +3,7 @@ package infra
 import (
 	"encoding/json"
 	"github.com/IsaacDSC/featureflag/internal/domain/entity"
-	"github.com/IsaacDSC/featureflag/internal/errorutils"
+	"github.com/IsaacDSC/featureflag/utils/errorutils"
 	"os"
 )
 

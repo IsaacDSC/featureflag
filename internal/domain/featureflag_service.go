@@ -3,7 +3,7 @@ package domain
 import (
 	"github.com/IsaacDSC/featureflag/internal/domain/entity"
 	"github.com/IsaacDSC/featureflag/internal/domain/interfaces"
-	"github.com/IsaacDSC/featureflag/internal/errorutils"
+	"github.com/IsaacDSC/featureflag/utils/errorutils"
 )
 
 type FeatureflagService struct {
