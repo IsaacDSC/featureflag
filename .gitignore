@@ -3,3 +3,5 @@ client.http
 .idea
 .vscode
 .env
+*secrets*
+.secrets
