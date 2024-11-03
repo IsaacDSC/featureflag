@@ -1,0 +1,72 @@
+### Authentication service
+POST {{host}}/auth
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+###
+
+
+###
+PATCH  {{host}}/featureflag
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Cookie: {{cookie}}
+
+{
+  "flag_name": "teste1",
+  "active": true
+}
+
+
+###
+PATCH {{host}}/featureflag
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Cookie: {{cookie}}
+
+{
+  "flag_name": "teste2",
+  "active": true,
+  "strategy": {
+    "percent": 50
+  }
+}
+
+
+###
+PATCH {{host}}/featureflag
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+
+{
+  "flag_name": "teste99",
+  "active": true,
+  "strategy": {
+    "session_id": ["34eec623-c9f2-494e-bf66-57a85139fd69"]
+  }
+}
+
+
+###
+GET {{host}}/featureflag
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+
+
+###
+GET {{host}}/featureflag/teste3
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Cookie: {{cookie}}
+session_id: 34eec623-c9f2-494e-bf66-57a85139fd69
+
+
+###
+DELETE {{host}}/featureflag/teste99
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Cookie: {{cookie}}

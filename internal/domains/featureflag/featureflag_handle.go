@@ -1,31 +1,30 @@
-package web
+package featureflag
 
 import (
 	"encoding/json"
-	"github.com/IsaacDSC/featureflag/internal/domain"
-	"github.com/IsaacDSC/featureflag/internal/dto"
-	"github.com/IsaacDSC/featureflag/utils/authutils"
-	"github.com/IsaacDSC/featureflag/utils/ctxutils"
+	"fmt"
+	"github.com/IsaacDSC/featureflag/internal/middlewares"
 	"github.com/IsaacDSC/featureflag/utils/errorutils"
 	"io"
 	"net/http"
-	"time"
 )
 
 type Handler struct {
 	routes  map[string]func(w http.ResponseWriter, r *http.Request)
-	service *domain.FeatureflagService
+	service *Service
 }
 
-func NewHandler(service *domain.FeatureflagService) *Handler {
+const featureFlagPrefix = "/featureflag"
+
+func NewFeatureFlagHandler(service *Service) *Handler {
 	handler := new(Handler)
 	handler.service = service
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		"PATCH /":       ClientServicePermission(Authorization(handler.createOrUpdate)),
-		"DELETE /{key}": ClientServicePermission(Authorization(handler.delete)),
-		"GET /":         ClientServicePermission(Authorization(handler.getAll)),
-		"GET /{key}":    SDKPermission(Authentication(handler.get)),
-		"POST /auth":    ClientServicePermission(Authorization(handler.auth)),
+		fmt.Sprintf("PATCH %s", featureFlagPrefix):         middlewares.Authorization(middlewares.CheckPermission(handler.createOrUpdate, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.Authorization(middlewares.CheckPermission(handler.delete, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %s", featureFlagPrefix):           middlewares.Authorization(middlewares.CheckPermission(handler.getAll, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.Authorization(middlewares.CheckPermission(handler.get, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %s/sdk/{key}", featureFlagPrefix): middlewares.Authorization(middlewares.CheckPermission(handler.getFeatureFlagBySDK, middlewares.USERNAME_SDK)),
 	}
 
 	return handler
@@ -44,13 +43,13 @@ func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload dto.FeatureflagDTO
+	var payload Dto
 	if err := json.Unmarshal(body, &payload); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	featureflag, err := dto.FeatureFlagToDomain(payload)
+	featureflag, err := ToDomain(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -97,9 +96,9 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch err.(type) {
 		case *errorutils.NotFoundError:
-			statusError := err.(errorutils.NotFoundError)
-			w.WriteHeader(statusError.GetStatusCode())
-			w.Write([]byte(err.Error()))
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("feature flag not found"))
+			return
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
@@ -107,7 +106,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	output, err := json.Marshal(dto.FeatureFlagFromDomain(ff))
+	output, err := json.Marshal(DtoFromDomain(ff))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -116,6 +115,35 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(output)
+}
+
+func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+
+	if key == "" {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("required key params"))
+		return
+	}
+
+	sessionID := r.Header.Get("session_id")
+	statusFF, err := h.service.GetFeatureFlagBySDK(key, sessionID)
+
+	if err != nil {
+		switch err.(type) {
+		case *errorutils.NotFoundError:
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("feature flag not found"))
+			return
+		default:
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(fmt.Sprintf(`{"status": "%t"}`, statusFF)))
 }
 
 func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
@@ -134,19 +162,4 @@ func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
-}
-
-func (h *Handler) auth(w http.ResponseWriter, r *http.Request) {
-	username := ctxutils.GetValueCtx(r.Context(), KEY)
-	token, err := authutils.CreateToken(username)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:    "token",
-		Value:   token,
-		Expires: time.Now().Add(24 * time.Hour),
-	})
 }

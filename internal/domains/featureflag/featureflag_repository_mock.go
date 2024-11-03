@@ -2,16 +2,15 @@
 // Source: ./internal/domain/interfaces/featureflag_interfaces.go
 
 // Package mock is a generated GoMock package.
-package mock
+package featureflag
 
 import (
-	entity "github.com/IsaacDSC/featureflag/internal/domain/entity"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
 )
 
-// MockFeatureFlagRepository is a mock of FeatureFlagRepository interface.
+// MockFeatureFlagRepository is a mock of Adapter interface.
 type MockFeatureFlagRepository struct {
 	ctrl     *gomock.Controller
 	recorder *MockFeatureFlagRepositoryMockRecorder
@@ -49,10 +48,10 @@ func (mr *MockFeatureFlagRepositoryMockRecorder) DeleteFF(key interface{}) *gomo
 }
 
 // GetAllFF mocks base method.
-func (m *MockFeatureFlagRepository) GetAllFF() (map[string]entity.Featureflag, error) {
+func (m *MockFeatureFlagRepository) GetAllFF() (map[string]Entity, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllFF")
-	ret0, _ := ret[0].(map[string]entity.Featureflag)
+	ret0, _ := ret[0].(map[string]Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -64,10 +63,10 @@ func (mr *MockFeatureFlagRepositoryMockRecorder) GetAllFF() *gomock.Call {
 }
 
 // GetFF mocks base method.
-func (m *MockFeatureFlagRepository) GetFF(key string) (entity.Featureflag, error) {
+func (m *MockFeatureFlagRepository) GetFF(key string) (Entity, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFF", key)
-	ret0, _ := ret[0].(entity.Featureflag)
+	ret0, _ := ret[0].(Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +78,7 @@ func (mr *MockFeatureFlagRepositoryMockRecorder) GetFF(key interface{}) *gomock.
 }
 
 // SaveFF mocks base method.
-func (m *MockFeatureFlagRepository) SaveFF(input entity.Featureflag) error {
+func (m *MockFeatureFlagRepository) SaveFF(input Entity) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveFF", input)
 	ret0, _ := ret[0].(error)

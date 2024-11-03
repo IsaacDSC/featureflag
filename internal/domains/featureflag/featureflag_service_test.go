@@ -1,10 +1,8 @@
-package domain
+package featureflag
 
 import (
 	"errors"
-	"github.com/IsaacDSC/featureflag/internal/domain/entity"
-	"github.com/IsaacDSC/featureflag/internal/domain/interfaces"
-	mock "github.com/IsaacDSC/featureflag/internal/mocks"
+	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
 	"github.com/IsaacDSC/featureflag/utils/errorutils"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -15,16 +13,16 @@ import (
 
 func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 	type fields struct {
-		repository interfaces.FeatureFlagRepository
+		repository Adapter
 	}
 
 	type args struct {
-		featureflag entity.Featureflag
-		behavior    func(featureflag entity.Featureflag)
+		featureflag Entity
+		behavior    func(featureflag Entity)
 	}
 
 	control := gomock.NewController(t)
-	repository := mock.NewMockFeatureFlagRepository(control)
+	repository := NewMockFeatureFlagRepository(control)
 
 	tests := []struct {
 		name    string
@@ -38,14 +36,14 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 				repository: repository,
 			},
 			args: args{
-				behavior: func(featureflag entity.Featureflag) {
-					repository.EXPECT().GetFF(gomock.Any()).Return(featureflag, nil)
-					repository.EXPECT().SaveFF(featureflag).Return(nil)
+				behavior: func(ff Entity) {
+					repository.EXPECT().GetFF(gomock.Any()).Return(ff, nil)
+					repository.EXPECT().SaveFF(ff).Return(nil)
 				},
-				featureflag: entity.Featureflag{
+				featureflag: Entity{
 					ID:         uuid.New(),
 					FlagName:   "teste1",
-					Strategies: entity.Strategy{},
+					Strategies: strategy.Strategy{},
 					Active:     true,
 					CreatedAt:  time.Now(),
 				},
@@ -58,14 +56,14 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 				repository: repository,
 			},
 			args: args{
-				behavior: func(featureflag entity.Featureflag) {
-					repository.EXPECT().GetFF(gomock.Any()).Return(entity.Featureflag{}, errorutils.NewNotFoundError("ff"))
-					repository.EXPECT().SaveFF(featureflag).Return(nil)
+				behavior: func(ff Entity) {
+					repository.EXPECT().GetFF(gomock.Any()).Return(Entity{}, errorutils.NewNotFoundError("ff"))
+					repository.EXPECT().SaveFF(ff).Return(nil)
 				},
-				featureflag: entity.Featureflag{
+				featureflag: Entity{
 					ID:       uuid.New(),
 					FlagName: "teste1",
-					Strategies: entity.Strategy{
+					Strategies: strategy.Strategy{
 						WithStrategy: true,
 						SessionsID:   map[string]bool{"01J2BNZV8E3866GHMFFHDBZ3CD": true},
 					},
@@ -81,13 +79,13 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 				repository: repository,
 			},
 			args: args{
-				behavior: func(featureflag entity.Featureflag) {
-					repository.EXPECT().GetFF(gomock.Any()).Return(entity.Featureflag{}, errors.New("error read file"))
+				behavior: func(ff Entity) {
+					repository.EXPECT().GetFF(gomock.Any()).Return(Entity{}, errors.New("error read file"))
 				},
-				featureflag: entity.Featureflag{
+				featureflag: Entity{
 					ID:       uuid.New(),
 					FlagName: "teste1",
-					Strategies: entity.Strategy{
+					Strategies: strategy.Strategy{
 						WithStrategy: true,
 						SessionsID:   map[string]bool{"01J2BNZV8E3866GHMFFHDBZ3CD": true},
 					},
@@ -100,7 +98,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo := FeatureflagService{
+			repo := Service{
 				repository: tt.fields.repository,
 			}
 			tt.args.behavior(tt.args.featureflag)
@@ -113,22 +111,22 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 
 func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 	control := gomock.NewController(t)
-	repository := mock.NewMockFeatureFlagRepository(control)
+	repository := NewMockFeatureFlagRepository(control)
 
 	type fields struct {
-		repository interfaces.FeatureFlagRepository
+		repository Adapter
 	}
 	type args struct {
 		key       string
 		sessionID string
-		behavior  func(key string, sessionID string, featureflag entity.Featureflag)
+		behavior  func(key string, sessionID string, featureflag Entity)
 	}
 
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		want    entity.Featureflag
+		want    Entity
 		wantErr bool
 	}{
 		{
@@ -139,14 +137,14 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 			args: args{
 				key:       "teste1",
 				sessionID: "",
-				behavior: func(key string, sessionID string, featureflag entity.Featureflag) {
+				behavior: func(key string, sessionID string, featureflag Entity) {
 					repository.EXPECT().GetFF(key).Return(featureflag, nil)
 				},
 			},
-			want: entity.Featureflag{
+			want: Entity{
 				ID:         uuid.New(),
 				FlagName:   "teste1",
-				Strategies: entity.Strategy{},
+				Strategies: strategy.Strategy{},
 				Active:     true,
 				CreatedAt:  time.Now(),
 			},
@@ -160,17 +158,17 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 			args: args{
 				key:       "teste2",
 				sessionID: "",
-				behavior: func(key string, sessionID string, featureflag entity.Featureflag) {
+				behavior: func(key string, sessionID string, featureflag Entity) {
 					repository.EXPECT().GetFF(key).Return(featureflag, nil)
 					featureflag.Strategies.QtdCall += 1
 					featureflag.Active = false
 					repository.EXPECT().SaveFF(featureflag).Return(nil)
 				},
 			},
-			want: entity.Featureflag{
+			want: Entity{
 				ID:       uuid.New(),
 				FlagName: "teste2",
-				Strategies: entity.Strategy{
+				Strategies: strategy.Strategy{
 					WithStrategy: true,
 					Percent:      50,
 				},
@@ -187,16 +185,16 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 			args: args{
 				key:       "teste2",
 				sessionID: "01J2BQ9Y19SHS6F6PMZQCH9Z70",
-				behavior: func(key string, sessionID string, featureflag entity.Featureflag) {
+				behavior: func(key string, sessionID string, featureflag Entity) {
 					repository.EXPECT().GetFF(key).Return(featureflag, nil)
 					featureflag.Strategies.QtdCall += 1
 					repository.EXPECT().SaveFF(featureflag).Return(nil)
 				},
 			},
-			want: entity.Featureflag{
+			want: Entity{
 				ID:       uuid.New(),
 				FlagName: "teste2",
-				Strategies: entity.Strategy{
+				Strategies: strategy.Strategy{
 					WithStrategy: true,
 					SessionsID:   map[string]bool{"01J2BQ9Y19SHS6F6PMZQCH9Z70": true},
 				},
@@ -213,11 +211,11 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 			args: args{
 				key:       "teste2",
 				sessionID: "01J2BQ9Y19SHS6F6PMZQCH9Z70",
-				behavior: func(key string, sessionID string, featureflag entity.Featureflag) {
+				behavior: func(key string, sessionID string, featureflag Entity) {
 					repository.EXPECT().GetFF(key).Return(featureflag, errors.New("os read file error"))
 				},
 			},
-			want:    entity.Featureflag{},
+			want:    Entity{},
 			wantErr: true,
 		},
 		{
@@ -228,29 +226,29 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 			args: args{
 				key:       "teste2",
 				sessionID: "01J2BQ9Y19SHS6F6PMZQCH9Z70",
-				behavior: func(key string, sessionID string, featureflag entity.Featureflag) {
-					featureflag = entity.Featureflag{
+				behavior: func(key string, sessionID string, ff Entity) {
+					ff = Entity{
 						ID:       uuid.New(),
 						FlagName: "teste2",
-						Strategies: entity.Strategy{
+						Strategies: strategy.Strategy{
 							WithStrategy: true,
 							SessionsID:   map[string]bool{"01J2BQ9Y19SHS6F6PMZQCH9Z70": true},
 						},
 						Active:    true,
 						CreatedAt: time.Now(),
 					}
-					repository.EXPECT().GetFF(key).Return(featureflag, nil)
-					featureflag.Strategies.QtdCall += 1
-					repository.EXPECT().SaveFF(featureflag).Return(errors.New("os write error file"))
+					repository.EXPECT().GetFF(key).Return(ff, nil)
+					ff.Strategies.QtdCall += 1
+					repository.EXPECT().SaveFF(ff).Return(errors.New("os write error file"))
 				},
 			},
-			want:    entity.Featureflag{},
+			want:    Entity{},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ff := FeatureflagService{
+			ff := Service{
 				repository: tt.fields.repository,
 			}
 

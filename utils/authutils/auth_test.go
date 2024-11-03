@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateToken(t *testing.T) {
-	env.Override(env.Environment{SecretKey: "secret"})
+	env.Override(env.Environment{SecretKey: "82244db2-4346-4560-a768-14bf12aa5b81"})
 
 	type args struct {
 		data          any
@@ -21,7 +21,7 @@ func TestCreateToken(t *testing.T) {
 		{
 			name: "should be return",
 			args: args{
-				data:          "isaacdsc",
+				data:          "16db7723-bdd2-44b8-8a0d-9598ea45fb96",
 				validateToken: VerifyToken,
 			},
 			wantErr: false,

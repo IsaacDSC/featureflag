@@ -1,4 +1,4 @@
-package web
+package middlewares
 
 import (
 	"errors"
@@ -14,51 +14,31 @@ const (
 	USERNAME_SDK     = "SDK_CLIENT"
 )
 
-func SDKPermission(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, _ := r.Cookie("token")
-		data, err := authutils.GetDataJWT(cookie.Value)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-
-		username := data.(string)
-		key := ctxutils.GetValueCtx(r.Context(), KEY)
-		if key != USERNAME_SDK || username != USERNAME_SDK {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		h.ServeHTTP(w, r)
+func getClientPermission(key string) (string, error) {
+	cfg := env.Get()
+	if client, ok := map[string]string{
+		cfg.ServiceClientAT: USERNAME_SERVICE,
+		cfg.SDKClientAT:     USERNAME_SDK,
+	}[key]; ok {
+		return client, nil
 	}
+
+	return "", errors.New("client not found")
 }
 
-func ClientServicePermission(h http.HandlerFunc) http.HandlerFunc {
+func CheckPermission(h http.HandlerFunc, permission string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, _ := r.Cookie("token")
-		data, err := authutils.GetDataJWT(cookie.Value)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+		key := ctxutils.GetValueCtx(r.Context(), KEY)
+		if key == permission {
+			h.ServeHTTP(w, r)
 			return
 		}
 
-		username := data.(string)
-		key := ctxutils.GetValueCtx(r.Context(), KEY)
-		if key != USERNAME_SERVICE || username != USERNAME_SERVICE {
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-		h.ServeHTTP(w, r)
+		w.WriteHeader(http.StatusForbidden)
 	}
 }
 
 func Authorization(h http.HandlerFunc) http.HandlerFunc {
-	cfg := env.Get()
-	var users = map[string]string{
-		cfg.ServiceClientAT: USERNAME_SERVICE,
-		cfg.SDKClientAT:     USERNAME_SDK,
-	}
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		authorization := r.Header.Get("Authorization")
 		if authorization == "" {
@@ -66,8 +46,8 @@ func Authorization(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		clientName, ok := users[authorization]
-		if !ok {
+		clientName, err := getClientPermission(authorization)
+		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}

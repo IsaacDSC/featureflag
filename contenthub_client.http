@@ -1,0 +1,57 @@
+### Authentication service
+POST {{host}}/auth
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+
+###
+
+
+###
+PATCH  {{host}}/contenthub
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Cookie: {{cookie}}
+
+{
+  "flag_name": "teste1",
+  "active": true
+}
+
+
+###
+PATCH {{host}}/contenthub
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Cookie: {{cookie}}
+
+{
+  "flag_name": "teste2",
+  "active": true,
+  "strategy": {
+    "percent": 50
+  }
+}
+
+
+
+###
+GET {{host}}/contenthub
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+
+
+###
+GET {{host}}/contenthub/teste1
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+
+
+
+### SDK
+GET {{host}}/contenthub/sdk/teste3
+Accept: application/json
+Content-Type: application/json
+Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
