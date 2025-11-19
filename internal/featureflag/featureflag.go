@@ -1,8 +1,9 @@
 package featureflag
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
 	"time"
+
+	"github.com/IsaacDSC/featureflag/internal/strategy"
 
 	"github.com/google/uuid"
 )

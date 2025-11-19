@@ -3,7 +3,7 @@ package contenthub
 import (
 	"testing"
 
-	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
+	"github.com/IsaacDSC/featureflag/internal/strategy"
 	"github.com/IsaacDSC/featureflag/pkg/testrepository"
 )
 

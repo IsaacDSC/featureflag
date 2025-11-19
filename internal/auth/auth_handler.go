@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/IsaacDSC/featureflag/internal/middlewares"
 	"github.com/IsaacDSC/featureflag/pkg/authutils"
 	"github.com/IsaacDSC/featureflag/pkg/ctxutils"
+	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
 type AuthHandler struct {

@@ -1,11 +1,12 @@
 package handlers
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/containers"
-	"github.com/IsaacDSC/featureflag/internal/domains/auth"
-	"github.com/IsaacDSC/featureflag/internal/domains/contenthub"
-	"github.com/IsaacDSC/featureflag/internal/domains/featureflag"
 	"net/http"
+
+	"github.com/IsaacDSC/featureflag/cmd/containers"
+	"github.com/IsaacDSC/featureflag/internal/auth"
+	"github.com/IsaacDSC/featureflag/internal/contenthub"
+	"github.com/IsaacDSC/featureflag/internal/featureflag"
 )
 
 func NewHandlers(services containers.ServiceContainer) map[string]func(w http.ResponseWriter, r *http.Request) {

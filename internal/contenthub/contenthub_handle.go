@@ -3,9 +3,10 @@ package contenthub
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/IsaacDSC/featureflag/internal/middlewares"
 	"io"
 	"net/http"
+
+	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
 type ContenthubHandler struct {

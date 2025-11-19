@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/IsaacDSC/featureflag/internal/middlewares"
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
+	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
 type Handler struct {

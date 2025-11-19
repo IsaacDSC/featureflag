@@ -1,9 +1,10 @@
 package featureflag
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/IsaacDSC/featureflag/internal/strategy"
+	"github.com/google/uuid"
 )
 
 type Dto struct {

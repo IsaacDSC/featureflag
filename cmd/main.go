@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/containers"
-	"github.com/IsaacDSC/featureflag/internal/env"
-	"github.com/IsaacDSC/featureflag/internal/handlers"
-	"github.com/IsaacDSC/featureflag/internal/middlewares"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/IsaacDSC/featureflag/cmd/containers"
+	"github.com/IsaacDSC/featureflag/internal/env"
+	"github.com/IsaacDSC/featureflag/pkg/handlers"
+	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
 func init() {
