@@ -1,11 +1,12 @@
 package auth
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/middlewares"
-	"github.com/IsaacDSC/featureflag/utils/authutils"
-	"github.com/IsaacDSC/featureflag/utils/ctxutils"
 	"net/http"
 	"time"
+
+	"github.com/IsaacDSC/featureflag/internal/middlewares"
+	"github.com/IsaacDSC/featureflag/pkg/authutils"
+	"github.com/IsaacDSC/featureflag/pkg/ctxutils"
 )
 
 type AuthHandler struct {

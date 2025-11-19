@@ -1,9 +1,10 @@
 package contenthub
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
-	"github.com/IsaacDSC/featureflag/utils/testrepository"
 	"testing"
+
+	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
+	"github.com/IsaacDSC/featureflag/pkg/testrepository"
 )
 
 func TestContentHubRepository(t *testing.T) {

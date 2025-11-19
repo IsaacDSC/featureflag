@@ -2,10 +2,11 @@ package contenthub
 
 import (
 	"errors"
-	"github.com/IsaacDSC/featureflag/utils/errorutils"
-	"github.com/golang/mock/gomock"
 	"reflect"
 	"testing"
+
+	"github.com/IsaacDSC/featureflag/pkg/errorutils"
+	"github.com/golang/mock/gomock"
 )
 
 func TestContentHubService_CreateOrUpdate(t *testing.T) {

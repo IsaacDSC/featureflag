@@ -3,10 +3,11 @@ package featureflag
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/IsaacDSC/featureflag/internal/middlewares"
-	"github.com/IsaacDSC/featureflag/utils/errorutils"
 	"io"
 	"net/http"
+
+	"github.com/IsaacDSC/featureflag/internal/middlewares"
+	"github.com/IsaacDSC/featureflag/pkg/errorutils"
 )
 
 type Handler struct {

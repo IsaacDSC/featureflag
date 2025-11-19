@@ -2,10 +2,11 @@ package middlewares
 
 import (
 	"errors"
-	"github.com/IsaacDSC/featureflag/internal/env"
-	"github.com/IsaacDSC/featureflag/utils/authutils"
-	"github.com/IsaacDSC/featureflag/utils/ctxutils"
 	"net/http"
+
+	"github.com/IsaacDSC/featureflag/internal/env"
+	"github.com/IsaacDSC/featureflag/pkg/authutils"
+	"github.com/IsaacDSC/featureflag/pkg/ctxutils"
 )
 
 const (

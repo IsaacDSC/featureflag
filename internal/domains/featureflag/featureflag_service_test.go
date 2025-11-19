@@ -2,13 +2,14 @@ package featureflag
 
 import (
 	"errors"
-	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
-	"github.com/IsaacDSC/featureflag/utils/errorutils"
-	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/IsaacDSC/featureflag/internal/domains/strategy"
+	"github.com/IsaacDSC/featureflag/pkg/errorutils"
+	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
 )
 
 func TestFeatureflagService_CreateOrUpdate(t *testing.T) {

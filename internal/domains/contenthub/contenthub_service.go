@@ -1,7 +1,7 @@
 package contenthub
 
 import (
-	"github.com/IsaacDSC/featureflag/utils/errorutils"
+	"github.com/IsaacDSC/featureflag/pkg/errorutils"
 )
 
 type Service struct {

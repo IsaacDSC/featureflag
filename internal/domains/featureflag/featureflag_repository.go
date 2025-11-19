@@ -2,9 +2,10 @@ package featureflag
 
 import (
 	"encoding/json"
-	"github.com/IsaacDSC/featureflag/internal/env"
-	"github.com/IsaacDSC/featureflag/utils/errorutils"
 	"os"
+
+	"github.com/IsaacDSC/featureflag/internal/env"
+	"github.com/IsaacDSC/featureflag/pkg/errorutils"
 )
 
 type Repository struct{}

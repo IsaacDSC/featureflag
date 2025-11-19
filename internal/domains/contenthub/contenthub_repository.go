@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/IsaacDSC/featureflag/utils/errorutils"
+	"github.com/IsaacDSC/featureflag/pkg/errorutils"
 )
 
 type Repository struct {
