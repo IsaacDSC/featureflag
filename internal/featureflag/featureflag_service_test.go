@@ -25,6 +25,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 
 	control := gomock.NewController(t)
 	repository := NewMockFeatureFlagRepository(control)
+	publisher := NewMockPublisher(control)
 
 	tests := []struct {
 		name    string
@@ -41,6 +42,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 				behavior: func(ff Entity) {
 					repository.EXPECT().GetFF(gomock.Any()).Return(ff, nil)
 					repository.EXPECT().SaveFF(ff).Return(nil)
+					publisher.EXPECT().Publish(gomock.Any(), "featureflag", gomock.Any()).Return(nil)
 				},
 				featureflag: Entity{
 					ID:         uuid.New(),
@@ -102,6 +104,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := Service{
 				repository: tt.fields.repository,
+				pub:        publisher,
 			}
 			tt.args.behavior(tt.args.featureflag)
 			if err := repo.CreateOrUpdate(context.Background(), tt.args.featureflag); (err != nil) != tt.wantErr {
@@ -114,6 +117,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 	control := gomock.NewController(t)
 	repository := NewMockFeatureFlagRepository(control)
+	publisher := NewMockPublisher(control)
 
 	type fields struct {
 		repository Adapter
@@ -252,6 +256,7 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ff := Service{
 				repository: tt.fields.repository,
+				pub:        publisher,
 			}
 
 			tt.args.behavior(tt.args.key, tt.args.sessionID, tt.want)
