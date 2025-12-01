@@ -53,7 +53,6 @@ func main() {
 	handlers := handlers.NewHandlers(services, sub)
 	for path, handler := range handlers {
 		// mux.HandleFunc(path, middlewares.Authorization(handler))
-		// mux.HandleFunc(path, handler)
 		mux.HandleFunc(path, middlewares.Logger(handler))
 	}
 
