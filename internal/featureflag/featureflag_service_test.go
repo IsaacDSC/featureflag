@@ -1,6 +1,7 @@
 package featureflag
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -103,7 +104,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 				repository: tt.fields.repository,
 			}
 			tt.args.behavior(tt.args.featureflag)
-			if err := repo.CreateOrUpdate(tt.args.featureflag); (err != nil) != tt.wantErr {
+			if err := repo.CreateOrUpdate(context.Background(), tt.args.featureflag); (err != nil) != tt.wantErr {
 				t.Errorf("CreateOrUpdate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

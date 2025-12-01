@@ -1,19 +1,28 @@
 package featureflag
 
 import (
+	"context"
+	"fmt"
+
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
+	"github.com/IsaacDSC/featureflag/pkg/pubsub"
 )
+
+type Publisher interface {
+	Publish(ctx context.Context, channel string, msg pubsub.Payload) error
+}
 
 type Service struct {
 	repository Adapter
+	pub        Publisher
 }
 
-func NewFeatureflagService(repository Adapter) *Service {
-	return &Service{repository: repository}
+func NewFeatureflagService(repository Adapter, pub Publisher) *Service {
+	return &Service{repository: repository, pub: pub}
 }
 
-func (ff Service) CreateOrUpdate(featureflag Entity) error {
-	database, err := ff.repository.GetFF(featureflag.FlagName)
+func (ff Service) CreateOrUpdate(ctx context.Context, featureflag Entity) error {
+	flag, err := ff.repository.GetFF(featureflag.FlagName)
 
 	if err != nil {
 		switch err.(type) {
@@ -29,9 +38,17 @@ func (ff Service) CreateOrUpdate(featureflag Entity) error {
 		return nil
 	}
 
-	database.Active = featureflag.Active
+	flag.Active = featureflag.Active
 
-	return ff.repository.SaveFF(database)
+	if err := ff.repository.SaveFF(flag); err != nil {
+		return fmt.Errorf("error on save in repository: %w", err)
+	}
+
+	if ff.pub.Publish(ctx, "featureflag", pubsub.NewPayload(flag)); err != nil {
+		return fmt.Errorf("error on publisher event writer feature flag: %w", err)
+	}
+
+	return nil
 }
 
 func (ff Service) RemoveFeatureFlag(key string) error {

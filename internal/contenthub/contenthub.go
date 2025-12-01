@@ -3,19 +3,18 @@ package contenthub
 import (
 	"time"
 
-	"github.com/IsaacDSC/featureflag/internal/strategy"
-
 	"github.com/google/uuid"
 )
 
 type Entity struct {
-	ID          uuid.UUID         `json:"id"`
-	Variable    string            `json:"flag_name"`
-	Value       string            `json:"value"`
-	Description string            `json:"description"`
-	Active      bool              `json:"active"`
-	CreatedAt   time.Time         `json:"created_at"`
-	Strategy    strategy.Strategy `json:"strategy"`
+	ID                 uuid.UUID          `json:"id"`
+	Variable           string             `json:"key"`
+	Value              string             `json:"value"`
+	Description        string             `json:"description"`
+	Active             bool               `json:"active"`
+	CreatedAt          time.Time          `json:"created_at"`
+	SessionsStrategies SessionsStrategies `json:"session_strategy"`
+	BalancerStrategy   BalancerStrategy   `json:"balancer_strategy"`
 }
 
 func NewEntity(
@@ -23,15 +22,17 @@ func NewEntity(
 	variable string,
 	value string,
 	description string,
-	strategy strategy.Strategy,
+	sessionStrategy SessionsStrategies,
+	balancerStrategy BalancerStrategy,
 ) Entity {
 	return Entity{
-		ID:          uuid.New(),
-		Variable:    variable,
-		Description: description,
-		Value:       value,
-		Active:      active,
-		Strategy:    strategy,
-		CreatedAt:   time.Now(),
+		ID:                 uuid.New(),
+		Variable:           variable,
+		Description:        description,
+		Value:              value,
+		Active:             active,
+		SessionsStrategies: sessionStrategy,
+		BalancerStrategy:   balancerStrategy,
+		CreatedAt:          time.Now(),
 	}
 }

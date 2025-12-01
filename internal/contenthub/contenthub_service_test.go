@@ -1,6 +1,7 @@
 package contenthub
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
@@ -67,7 +68,7 @@ func TestContentHubService_CreateOrUpdate(t *testing.T) {
 				repository: repository,
 			}
 			tt.behavior(tt.contenthub)
-			if err := ch.CreateOrUpdate(tt.contenthub); (err != nil) != tt.wantErr {
+			if err := ch.CreateOrUpdate(context.Background(), tt.contenthub); (err != nil) != tt.wantErr {
 				t.Errorf("CreateOrUpdate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

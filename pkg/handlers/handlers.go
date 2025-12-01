@@ -7,10 +7,16 @@ import (
 	"github.com/IsaacDSC/featureflag/internal/auth"
 	"github.com/IsaacDSC/featureflag/internal/contenthub"
 	"github.com/IsaacDSC/featureflag/internal/featureflag"
+	"github.com/IsaacDSC/featureflag/internal/health"
+	"github.com/IsaacDSC/featureflag/internal/sdknotifier"
 )
 
-func NewHandlers(services containers.ServiceContainer) map[string]func(w http.ResponseWriter, r *http.Request) {
+func NewHandlers(services containers.ServiceContainer, sub sdknotifier.Subscriber) map[string]func(w http.ResponseWriter, r *http.Request) {
 	output := make(map[string]func(w http.ResponseWriter, r *http.Request))
+
+	for k, v := range health.NewHandler().GetRoutes() {
+		output[k] = v
+	}
 
 	for k, v := range auth.NewAuthHandler().GetRoutes() {
 		output[k] = v
@@ -21,6 +27,10 @@ func NewHandlers(services containers.ServiceContainer) map[string]func(w http.Re
 	}
 
 	for k, v := range contenthub.NewContenthubHandler(services.ContentHubService).GetRoutes() {
+		output[k] = v
+	}
+
+	for k, v := range sdknotifier.NewSdkNotifyHandler(sub).GetRoutes() {
 		output[k] = v
 	}
 

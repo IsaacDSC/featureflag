@@ -3,23 +3,27 @@ package contenthub
 import (
 	"time"
 
-	"github.com/IsaacDSC/featureflag/internal/strategy"
 	"github.com/google/uuid"
 )
 
 type Dto struct {
-	ID          uuid.UUID            `json:"id"`
-	Variable    string               `json:"flag_name"`
-	Value       string               `json:"value"`
-	Description string               `json:"description"`
-	Active      bool                 `json:"active"`
-	CreatedAt   time.Time            `json:"created_at"`
-	Strategy    strategy.StrategyDto `json:"strategy"`
+	ID                 uuid.UUID          `json:"id"`
+	Variable           string             `json:"key"`
+	Value              string             `json:"value"`
+	Description        string             `json:"description"`
+	Active             bool               `json:"active"`
+	CreatedAt          time.Time          `json:"created_at"`
+	SessionsStrategies SessionsStrategies `json:"session_strategy"`
+	BalancerStrategy   BalancerStrategy   `json:"balancer_strategy"`
 }
 
 func (c *Dto) ToDomain() (Entity, error) {
-	strategy, err := c.Strategy.ToDomain()
-	if err != nil {
+	// sessionStrategy, err := c.SessionStrategy.ToDomain()
+	// if err != nil {
+	// 	return Entity{}, err
+	// }
+
+	if err := c.BalancerStrategy.Validate(); err != nil {
 		return Entity{}, err
 	}
 
@@ -28,19 +32,21 @@ func (c *Dto) ToDomain() (Entity, error) {
 		c.Variable,
 		c.Value,
 		c.Description,
-		strategy,
+		c.SessionsStrategies,
+		c.BalancerStrategy,
 	), nil
 }
 
 func FromDomain(contenthub Entity) Dto {
 	return Dto{
-		ID:          contenthub.ID,
-		Variable:    contenthub.Variable,
-		Value:       contenthub.Value,
-		Description: contenthub.Description,
-		Active:      contenthub.Active,
-		CreatedAt:   contenthub.CreatedAt,
-		Strategy:    strategy.StrategyFromDomain(contenthub.Strategy),
+		ID:                 contenthub.ID,
+		Variable:           contenthub.Variable,
+		Value:              contenthub.Value,
+		Description:        contenthub.Description,
+		Active:             contenthub.Active,
+		CreatedAt:          contenthub.CreatedAt,
+		SessionsStrategies: contenthub.SessionsStrategies,
+		BalancerStrategy:   contenthub.BalancerStrategy,
 	}
 }
 

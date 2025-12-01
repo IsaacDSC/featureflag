@@ -9,10 +9,12 @@ type StrategyDto struct {
 	Percent    float64  `json:"percent,omitempty"`
 }
 
+var ErrSessionStrategy = errors.New("invalid strategy, chosen strategy with session or strategy with percent")
+
 func (s StrategyDto) ToDomain() (Strategy, error) {
-	if s.Percent > float64(0) && len(s.SessionsID) > 0 {
-		return Strategy{}, errors.New("invalid strategy, chosen strategy with session or strategy with percent")
-	}
+	// if s.Percent > float64(0) && len(s.SessionsID) > 0 {
+	// 	return Strategy{}, ErrSessionStrategy
+	// }
 
 	if s.Percent > float64(0) || len(s.SessionsID) > 0 {
 		sessions := map[string]bool{}

@@ -3,7 +3,6 @@ package contenthub
 import (
 	"testing"
 
-	"github.com/IsaacDSC/featureflag/internal/strategy"
 	"github.com/IsaacDSC/featureflag/pkg/testrepository"
 )
 
@@ -22,12 +21,19 @@ func TestContentHubRepository(t *testing.T) {
 	}{
 		{
 			Name: "Should be able to save content hub",
-			Contenthub: NewEntity(true, "test", "test", "test", strategy.Strategy{
-				WithStrategy: false,
-				SessionsID:   nil,
-				Percent:      0,
-				QtdCall:      0,
-			}),
+			Contenthub: NewEntity(
+				true,
+				"test",
+				"test",
+				"test",
+				SessionsStrategies{
+					{SessionID: "default", Response: "default-value"},
+				},
+				BalancerStrategy{
+					{Weight: 50, Response: "response-a"},
+					{Weight: 50, Response: "response-b"},
+				},
+			),
 			IsError: false,
 		},
 	}

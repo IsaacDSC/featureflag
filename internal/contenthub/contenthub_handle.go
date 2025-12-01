@@ -3,10 +3,7 @@ package contenthub
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-
-	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
 type ContenthubHandler struct {
@@ -20,11 +17,11 @@ func NewContenthubHandler(service *Service) *ContenthubHandler {
 	handler := new(ContenthubHandler)
 	handler.service = service
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("PATCH %s", contenthubRouterPrefix):         middlewares.Authorization(middlewares.CheckPermission(handler.patchContenthub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("DELETE %s/{key}", contenthubRouterPrefix):  middlewares.Authorization(middlewares.CheckPermission(handler.deleteContenthub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s", contenthubRouterPrefix):           middlewares.Authorization(middlewares.CheckPermission(handler.getAllContenthub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s/{key}", contenthubRouterPrefix):     middlewares.Authentication(middlewares.CheckPermission(handler.getContentHub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s/sdk/{key}", contenthubRouterPrefix): middlewares.Authentication(middlewares.CheckPermission(handler.getContentHubBySDK, middlewares.USERNAME_SDK)),
+		fmt.Sprintf("PATCH %s", contenthubRouterPrefix):         handler.patchContenthub,    //middlewares.Authorization(middlewares.CheckPermission(handler.patchContenthub, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("DELETE %s/{key}", contenthubRouterPrefix):  handler.deleteContenthub,   //middlewares.Authorization(middlewares.CheckPermission(handler.deleteContenthub, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %ss", contenthubRouterPrefix):          handler.getAllContenthub,   //middlewares.Authorization(middlewares.CheckPermission(handler.getAllContenthub, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %s/{key}", contenthubRouterPrefix):     handler.getContentHub,      //middlewares.Authentication(middlewares.CheckPermission(handler.getContentHub, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %s/sdk/{key}", contenthubRouterPrefix): handler.getContentHubBySDK, //middlewares.Authentication(middlewares.CheckPermission(handler.getContentHubBySDK, middlewares.USERNAME_SDK)),
 	}
 
 	return handler
@@ -35,25 +32,24 @@ func (h ContenthubHandler) GetRoutes() map[string]func(w http.ResponseWriter, r 
 }
 
 func (h ContenthubHandler) patchContenthub(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
 	var payload Dto
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		w.Write([]byte("error on decode body"))
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	payloadEntity, err := payload.ToDomain()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	if err := h.service.CreateOrUpdate(payloadEntity); err != nil {
+	if err := h.service.CreateOrUpdate(ctx, payloadEntity); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -88,7 +84,12 @@ func (h ContenthubHandler) getAllContenthub(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(contents); err != nil {
+	var result []Entity
+	for _, entity := range contents {
+		result = append(result, entity)
+	}
+
+	if err := json.NewEncoder(w).Encode(result); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

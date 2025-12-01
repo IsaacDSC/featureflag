@@ -21,9 +21,9 @@ func NewFeatureFlagHandler(service *Service) *Handler {
 	handler := new(Handler)
 	handler.service = service
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("PATCH %s", featureFlagPrefix):         middlewares.Authorization(middlewares.CheckPermission(handler.createOrUpdate, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("PATCH %s", featureFlagPrefix):         handler.createOrUpdate,
 		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.Authorization(middlewares.CheckPermission(handler.delete, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s", featureFlagPrefix):           middlewares.Authorization(middlewares.CheckPermission(handler.getAll, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %ss", featureFlagPrefix):          handler.getAll,
 		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.Authorization(middlewares.CheckPermission(handler.get, middlewares.USERNAME_SERVICE)),
 		fmt.Sprintf("GET %s/sdk/{key}", featureFlagPrefix): middlewares.Authorization(middlewares.CheckPermission(handler.getFeatureFlagBySDK, middlewares.USERNAME_SDK)),
 	}
@@ -37,6 +37,7 @@ func (h *Handler) GetRoutes() map[string]func(w http.ResponseWriter, r *http.Req
 
 func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
+	ctx := r.Context()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -57,7 +58,7 @@ func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.CreateOrUpdate(featureflag); err != nil {
+	if err := h.service.CreateOrUpdate(ctx, featureflag); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -148,6 +149,9 @@ func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
+	// TODO: Possibilitar receber um parametro de query para filtrar por status
+	// status := r.URL.Query().Get("status")
+
 	database, err := h.service.GetAllFeatureFlag()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -155,7 +159,12 @@ func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(database)
+	var result []Entity
+	for _, entity := range database {
+		result = append(result, entity)
+	}
+
+	b, err := json.Marshal(result)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
