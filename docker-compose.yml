@@ -15,6 +15,63 @@ services:
       interval: 10s
       timeout: 3s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+    networks:
+      - featureflag-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: featureflag-app
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_ADDR=redis:6379
+      - PORT=3000
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/ping",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    volumes:
+      - ./data:/app/data
+      - ./featureflags.json:/app/featureflags.json
+      - ./contenthub.json:/app/contenthub.json
+    networks:
+      - featureflag-network
+
+networks:
+  featureflag-network:
+    driver: bridge
 
 volumes:
   redis_data:

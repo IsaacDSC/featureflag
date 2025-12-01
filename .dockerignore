@@ -1,5 +1,65 @@
+# Git
+.git
 .gitignore
-client.http
+.github
+
+# Documentation
+README.md
+README_DOCKER.md
+*.md
+example.md
+
+# IDE
 .idea
 .vscode
-README.md
+*.swp
+*.swo
+*~
+
+# Testing
+*_test.go
+**/*_test.go
+
+# Development files
+.env
+.env.local
+.env.*.local
+*.http
+client.http
+*_client.http
+http-client.env.json
+
+# Temporary files
+*.tmp
+*.log
+tmp/
+temp/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies (será baixado no build)
+vendor/
+
+# Data files (serão montados via volume)
+data/
+*.json
+!go.mod
+!go.sum
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Todo and notes
+.Todo.md
+TODO
+CHANGELOG.md
+Contrubute.md
