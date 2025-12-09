@@ -20,12 +20,18 @@ type ContenthubSDK struct {
 	client    *http.Client
 	ffDefault Value
 
-	db map[string]Content
+	sleeper time.Duration
+	db      map[string]Content
 }
 
 func NewContenthubSDK(hostFF string) *ContenthubSDK {
-	sdk := &ContenthubSDK{client: &http.Client{}, host: hostFF}
+	sdk := &ContenthubSDK{client: &http.Client{}, host: hostFF, sleeper: time.Second * 60}
 	return sdk
+}
+
+func (c *ContenthubSDK) WithEventualConsistency(time time.Duration) *ContenthubSDK {
+	c.sleeper = time
+	return c
 }
 
 func (c *ContenthubSDK) Listenner(ctx context.Context) (*ContenthubSDK, error) {
@@ -49,6 +55,9 @@ func (c *ContenthubSDK) Listenner(ctx context.Context) (*ContenthubSDK, error) {
 		fmt.Println("\n🛑 Encerrando cliente...")
 		cancel()
 	}()
+
+	// Iniciar refresh em background
+	go c.refresh(ctx)
 
 	//FICAR ESCUTANDO EVENTOS (SSE)
 	// Cliente com timeout apenas para verificar se o servidor está rodando
@@ -155,7 +164,7 @@ func (fr Result) DecodeJson(value any) error {
 	return json.Unmarshal(fr.value, value)
 }
 
-func (c ContenthubSDK) Content(key string, sessionID ...string) Result {
+func (c *ContenthubSDK) Content(key string, sessionID ...string) Result {
 	content, ok := c.db[key]
 
 	if !ok {
@@ -173,7 +182,7 @@ func (c ContenthubSDK) Content(key string, sessionID ...string) Result {
 
 }
 
-func (c ContenthubSDK) getAllContents(ctx context.Context) (map[string]Content, error) {
+func (c *ContenthubSDK) getAllContents(ctx context.Context) (map[string]Content, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/contenthubs", c.host))
 	if err != nil {
 		return nil, fmt.Errorf("error on get features Contents :%w", err)
@@ -197,4 +206,28 @@ func (c ContenthubSDK) getAllContents(ctx context.Context) (map[string]Content, 
 	}
 
 	return output, nil
+}
+
+func (c *ContenthubSDK) refresh(ctx context.Context) {
+	ticker := time.NewTicker(c.sleeper)
+	defer ticker.Stop()
+
+	fmt.Println("🔄 Refresh iniciado - atualizando contents a cada 60 segundos")
+
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("🛑 Refresh encerrado")
+			return
+		case <-ticker.C:
+			contents, err := c.getAllContents(ctx)
+			if err != nil {
+				fmt.Printf("error on refresh contents: %v\n", err)
+				continue
+			}
+
+			c.db = contents
+			fmt.Println("✅ Contents atualizados via refresh")
+		}
+	}
 }

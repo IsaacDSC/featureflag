@@ -20,12 +20,18 @@ type FeatureFlagSDK struct {
 	client    *http.Client
 	ffDefault bool
 
+	sleeper       time.Duration
 	inMemoryFlags map[string]Flag
 }
 
 func NewFeatureFlagSDK(hostFF string) *FeatureFlagSDK {
-	sdk := &FeatureFlagSDK{client: &http.Client{}, host: hostFF}
+	sdk := &FeatureFlagSDK{client: &http.Client{}, host: hostFF, sleeper: time.Second * 60}
 	return sdk
+}
+
+func (c *FeatureFlagSDK) WithEventualConsistency(time time.Duration) *FeatureFlagSDK {
+	c.sleeper = time
+	return c
 }
 
 func (ff *FeatureFlagSDK) Listenner(ctx context.Context) (*FeatureFlagSDK, error) {
@@ -49,6 +55,9 @@ func (ff *FeatureFlagSDK) Listenner(ctx context.Context) (*FeatureFlagSDK, error
 		fmt.Println("\n🛑 Encerrando cliente...")
 		cancel()
 	}()
+
+	// Iniciar refresh em background
+	go ff.refresh(ctx)
 
 	//FICAR ESCUTANDO EVENTOS (SSE)
 	// Cliente com timeout apenas para verificar se o servidor está rodando
@@ -202,4 +211,28 @@ func (ff FeatureFlagSDK) getAllFlags(ctx context.Context) (map[string]Flag, erro
 	}
 
 	return output, nil
+}
+
+func (ff FeatureFlagSDK) refresh(ctx context.Context) {
+	ticker := time.NewTicker(ff.sleeper)
+	defer ticker.Stop()
+
+	fmt.Println("🔄 Refresh iniciado - atualizando flags a cada 60 segundos")
+
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("🛑 Refresh encerrado")
+			return
+		case <-ticker.C:
+			flags, err := ff.getAllFlags(ctx)
+			if err != nil {
+				fmt.Printf("error on refresh flags: %v\n", err)
+				continue
+			}
+
+			ff.inMemoryFlags = flags
+			fmt.Println("✅ Flags atualizadas via refresh")
+		}
+	}
 }
