@@ -7,9 +7,9 @@ import (
 const MaxCalls = 10
 
 type MultipleStrategy struct {
-	Weight   uint `json:"weight"`
-	Response any  `json:"response"`
-	Qtt      uint
+	Weight   uint `json:"weight" bson:"weight"`
+	Response any  `json:"response" bson:"response"`
+	Qtt      uint `bson:"qtt"`
 }
 
 type BalancerStrategy []MultipleStrategy
