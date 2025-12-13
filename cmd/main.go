@@ -44,7 +44,13 @@ func init() {
 }
 
 func main() {
-	repositories := containers.NewRepositoryContainer()
+	var repositories containers.RepositoryContainer
+	if os.Getenv("jsonfile") == "true" {
+		repositories = containers.NewRepositoryContainer()
+	} else {
+		repositories = containers.NewRepositoryContainerMongodb()
+	}
+
 	pub := pubsub.NewPublisher(rdb)
 	services := containers.NewServiceContainer(repositories, pub)
 	sub := pubsub.NewSubscriber(rdb)

@@ -9,11 +9,11 @@ import (
 )
 
 type Entity struct {
-	ID         uuid.UUID         `json:"id"`
-	FlagName   string            `json:"flag_name"`
-	Strategies strategy.Strategy `json:"strategy"`
-	Active     bool              `json:"active"`
-	CreatedAt  time.Time         `json:"created_at"`
+	ID         uuid.UUID         `json:"id" bson:"id"`
+	FlagName   string            `json:"flag_name" bson:"flag_name"`
+	Strategies strategy.Strategy `json:"strategy" bson:"strategy"`
+	Active     bool              `json:"active" bson:"active"`
+	CreatedAt  time.Time         `json:"created_at" bson:"created_at"`
 }
 
 func (ff Entity) SetStrategy(sessionID string) Entity {

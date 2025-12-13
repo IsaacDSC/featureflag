@@ -5,8 +5,8 @@ import (
 )
 
 type SessionStrategy struct {
-	SessionID string `json:"session_id"`
-	Response  any    `json:"response"`
+	SessionID string `json:"session_id" bson:"session_id"`
+	Response  any    `json:"response" bson:"response"`
 }
 
 type SessionsStrategies []SessionStrategy
