@@ -208,7 +208,7 @@ func TestMongoDBRepository_GetContentHub_NotFound(t *testing.T) {
 	}
 
 	// Verificar se é um NotFoundError
-	// A mensagem de erro deve conter "ff" ou similar
+	// A mensagem de erro deve conter "variable" ou "contenthub" ou similar
 	errMsg := err.Error()
 	if errMsg == "" {
 		t.Error("Esperado mensagem de erro, obteve string vazia")
