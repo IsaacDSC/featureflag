@@ -49,7 +49,7 @@ func main() {
 	environment := env.Get()
 
 	var repositories containers.RepositoryContainer
-	if os.Getenv("jsonfile") == "true" {
+	if environment.RepositoryType == "jsonfile" {
 		repositories = containers.NewRepositoryContainer()
 	} else {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -61,7 +61,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 			},
 			args: args{
 				behavior: func(ff Entity) {
-					repository.EXPECT().GetFF(gomock.Any()).Return(Entity{}, errorutils.NewNotFoundError("ff"))
+					repository.EXPECT().GetFF(gomock.Any()).Return(Entity{}, errorutils.NewNotFoundError("featureflag"))
 					repository.EXPECT().SaveFF(ff).Return(nil)
 				},
 				featureflag: Entity{

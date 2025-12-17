@@ -70,7 +70,7 @@ func (mr *MongoDBRepository) GetFF(key string) (Entity, error) {
 	err := mr.collection.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return Entity{}, errorutils.NewNotFoundError("ff")
+			return Entity{}, errorutils.NewNotFoundError("featureflag")
 		}
 		return Entity{}, err
 	}
@@ -115,7 +115,7 @@ func (mr *MongoDBRepository) DeleteFF(key string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return errorutils.NewNotFoundError("ff")
+		return errorutils.NewNotFoundError("featureflag")
 	}
 
 	return nil

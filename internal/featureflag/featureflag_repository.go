@@ -36,7 +36,7 @@ func (fr Repository) GetFF(key string) (Entity, error) {
 	}
 
 	if len(b) == 0 {
-		return Entity{}, errorutils.NewNotFoundError("ff")
+		return Entity{}, errorutils.NewNotFoundError("featureflag")
 	}
 
 	var ff map[string]Entity
@@ -48,7 +48,7 @@ func (fr Repository) GetFF(key string) (Entity, error) {
 		return output, nil
 	}
 
-	return Entity{}, errorutils.NewNotFoundError("ff")
+	return Entity{}, errorutils.NewNotFoundError("featureflag")
 }
 
 func (fr Repository) GetAllFF() (map[string]Entity, error) {

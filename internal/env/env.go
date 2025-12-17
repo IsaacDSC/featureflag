@@ -1,18 +1,21 @@
 package env
 
 import (
-	"os"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Environment struct {
-	SecretKey         string
-	ServiceClientAT   string
-	SDKClientAT       string
-	MongoDBURI        string
-	MongoDBName       string
-	MongoDbIdxTimeout time.Duration
+	SecretKey         string        `env:"SECRET_KEY" env-required:"true"`
+	ServiceClientAT   string        `env:"SERVICE_CLIENT_AT" env-required:"true"`
+	SDKClientAT       string        `env:"SDK_CLIENT_AT" env-required:"true"`
+	RepositoryType    string        `env:"REPOSITORY_TYPE" env-default:"jsonfile"`
+	MongoDBURI        string        `env:"MONGODB_URI"`
+	MongoDBName       string        `env:"MONGODB_NAME"`
+	MongoDbIdxTimeout time.Duration `env:"MONGODB_IDX_TIMEOUT" env-default:"2s"`
 }
 
 var (
@@ -22,13 +25,9 @@ var (
 
 func Init() {
 	once.Do(func() {
-		env = &Environment{
-			SecretKey:         os.Getenv("SECRET_KEY"),
-			ServiceClientAT:   os.Getenv("SERVICE_CLIENT_AT"),
-			SDKClientAT:       os.Getenv("SDK_CLIENT_AT"),
-			MongoDBURI:        os.Getenv("MONGODB_URI"),
-			MongoDBName:       os.Getenv("MONGODB_NAME"),
-			MongoDbIdxTimeout: getDuration("MONGODB_IDX_TIMEOUT", 2*time.Second),
+		env = &Environment{}
+		if err := cleanenv.ReadEnv(env); err != nil {
+			log.Fatalf("Failed to load environment variables: %v", err)
 		}
 	})
 }
@@ -39,17 +38,4 @@ func Get() *Environment {
 
 func Override(environment Environment) {
 	env = &environment
-}
-
-func getDuration(envName string, defaultValue time.Duration) time.Duration {
-	envValue := os.Getenv(envName)
-	if envValue != "" {
-		d, err := time.ParseDuration(envValue)
-		if err != nil {
-			panic(err)
-		}
-		defaultValue = d
-	}
-
-	return defaultValue
 }

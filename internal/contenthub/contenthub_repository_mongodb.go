@@ -72,7 +72,7 @@ func (mr *MongoDBRepository) GetContentHub(key string) (Entity, error) {
 	err := mr.collection.FindOne(ctx, filter).Decode(&entity)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return Entity{}, errorutils.NewNotFoundError("ff")
+			return Entity{}, errorutils.NewNotFoundError("contenthub")
 		}
 		return Entity{}, err
 	}
@@ -117,7 +117,7 @@ func (mr *MongoDBRepository) DeleteContentHub(key string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return errorutils.NewNotFoundError("ff")
+		return errorutils.NewNotFoundError("contenthub")
 	}
 
 	return nil

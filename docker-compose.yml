@@ -66,6 +66,12 @@ services:
     environment:
       - REDIS_ADDR=redis:6379
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/featureflag?authSource=admin
+      - MONGODB_NAME=featureflag
+      - REPOSITORY_TYPE=mongodb
+      - MONGODB_IDX_TIMEOUT=2s
+      - SECRET_KEY=secret
+      - SERVICE_CLIENT_AT=service
+      - SDK_CLIENT_AT=sdk
       - PORT=3000
     depends_on:
       redis:

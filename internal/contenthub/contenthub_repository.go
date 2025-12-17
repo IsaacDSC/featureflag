@@ -39,7 +39,7 @@ func (fr Repository) GetContentHub(key string) (Entity, error) {
 	}
 
 	if len(b) == 0 {
-		return Entity{}, errorutils.NewNotFoundError("ff")
+		return Entity{}, errorutils.NewNotFoundError("contenthub")
 	}
 
 	var ff map[string]Entity
@@ -51,7 +51,7 @@ func (fr Repository) GetContentHub(key string) (Entity, error) {
 		return output, nil
 	}
 
-	return Entity{}, errorutils.NewNotFoundError("ff")
+	return Entity{}, errorutils.NewNotFoundError("contenthub")
 }
 
 func (fr Repository) GetAllContentHub() (map[string]Entity, error) {
