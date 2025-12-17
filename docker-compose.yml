@@ -26,6 +26,36 @@ services:
     networks:
       - featureflag-network
 
+  mongodb:
+    image: mongo:7
+    container_name: featureflag-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=featureflag
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    networks:
+      - featureflag-network
+
   app:
     build:
       context: .
@@ -35,9 +65,18 @@ services:
       - "3000:3000"
     environment:
       - REDIS_ADDR=redis:6379
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017/featureflag?authSource=admin
+      - MONGODB_NAME=featureflag
+      - REPOSITORY_TYPE=mongodb
+      - MONGODB_IDX_TIMEOUT=2s
+      - SECRET_KEY=secret
+      - SERVICE_CLIENT_AT=service
+      - SDK_CLIENT_AT=sdk
       - PORT=3000
     depends_on:
       redis:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -75,4 +114,8 @@ networks:
 
 volumes:
   redis_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  mongodb_config:
     driver: local

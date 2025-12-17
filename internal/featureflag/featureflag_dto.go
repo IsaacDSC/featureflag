@@ -1,6 +1,8 @@
 package featureflag
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/IsaacDSC/featureflag/internal/strategy"
@@ -14,6 +16,10 @@ type Dto struct {
 }
 
 func ToDomain(input Dto) (Entity, error) {
+	if strings.TrimSpace(input.FlagName) == "" {
+		return Entity{}, errors.New("flag name is required")
+	}
+
 	strategy, err := input.Strategies.ToDomain()
 	if err != nil {
 		return Entity{}, err

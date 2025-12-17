@@ -1,14 +1,21 @@
 package env
 
 import (
-	"os"
+	"log"
 	"sync"
+	"time"
+
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Environment struct {
-	SecretKey       string
-	ServiceClientAT string
-	SDKClientAT     string
+	SecretKey         string        `env:"SECRET_KEY" env-required:"true"`
+	ServiceClientAT   string        `env:"SERVICE_CLIENT_AT" env-required:"true"`
+	SDKClientAT       string        `env:"SDK_CLIENT_AT" env-required:"true"`
+	RepositoryType    string        `env:"REPOSITORY_TYPE" env-default:"jsonfile"`
+	MongoDBURI        string        `env:"MONGODB_URI"`
+	MongoDBName       string        `env:"MONGODB_NAME"`
+	MongoDbIdxTimeout time.Duration `env:"MONGODB_IDX_TIMEOUT" env-default:"2s"`
 }
 
 var (
@@ -18,10 +25,9 @@ var (
 
 func Init() {
 	once.Do(func() {
-		env = &Environment{
-			SecretKey:       os.Getenv("SECRET_KEY"),
-			ServiceClientAT: os.Getenv("SERVICE_CLIENT_AT"),
-			SDKClientAT:     os.Getenv("SDK_CLIENT_AT"),
+		env = &Environment{}
+		if err := cleanenv.ReadEnv(env); err != nil {
+			log.Fatalf("Failed to load environment variables: %v", err)
 		}
 	})
 }

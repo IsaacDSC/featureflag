@@ -15,6 +15,8 @@ import (
 	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 	"github.com/IsaacDSC/featureflag/pkg/pubsub"
 	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var rdb *redis.Client
@@ -44,7 +46,31 @@ func init() {
 }
 
 func main() {
-	repositories := containers.NewRepositoryContainer()
+	environment := env.Get()
+
+	var repositories containers.RepositoryContainer
+	if environment.RepositoryType == "jsonfile" {
+		repositories = containers.NewRepositoryContainer()
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		clientOptions := options.Client().ApplyURI(environment.MongoDBURI)
+		client, err := mongo.Connect(ctx, clientOptions)
+		if err != nil {
+			log.Fatalf("Failed to connect to MongoDB: %v", err)
+		}
+
+		// Ping MongoDB to verify connection
+		if err := client.Ping(ctx, nil); err != nil {
+			log.Fatalf("Failed to ping MongoDB: %v", err)
+		}
+
+		defer client.Disconnect(ctx)
+
+		repositories = containers.NewRepositoryContainerMongodb(client, environment.MongoDBName)
+	}
+
 	pub := pubsub.NewPublisher(rdb)
 	services := containers.NewServiceContainer(repositories, pub)
 	sub := pubsub.NewSubscriber(rdb)

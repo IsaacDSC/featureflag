@@ -7,14 +7,14 @@ import (
 )
 
 type Entity struct {
-	ID                 uuid.UUID          `json:"id"`
-	Variable           string             `json:"key"`
-	Value              string             `json:"value"`
-	Description        string             `json:"description"`
-	Active             bool               `json:"active"`
-	CreatedAt          time.Time          `json:"created_at"`
-	SessionsStrategies SessionsStrategies `json:"session_strategy"`
-	BalancerStrategy   BalancerStrategy   `json:"balancer_strategy"`
+	ID                 uuid.UUID          `json:"id" bson:"id"`
+	Variable           string             `json:"key" bson:"key"`
+	Value              string             `json:"value" bson:"value"`
+	Description        string             `json:"description" bson:"description"`
+	Active             bool               `json:"active" bson:"active"`
+	CreatedAt          time.Time          `json:"created_at" bson:"created_at"`
+	SessionsStrategies SessionsStrategies `json:"session_strategy" bson:"session_strategy"`
+	BalancerStrategy   BalancerStrategy   `json:"balancer_strategy" bson:"balancer_strategy"`
 }
 
 func NewEntity(
