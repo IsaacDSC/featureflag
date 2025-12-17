@@ -66,7 +66,10 @@ func TestMongoDBRepository_SaveFF(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:        uuid.New(),
@@ -81,7 +84,7 @@ func TestMongoDBRepository_SaveFF(t *testing.T) {
 		},
 	}
 
-	err := repo.SaveFF(entity)
+	err = repo.SaveFF(entity)
 	if err != nil {
 		t.Fatalf("SaveFF falhou: %v", err)
 	}
@@ -108,7 +111,10 @@ func TestMongoDBRepository_SaveFF_Update(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:        uuid.New(),
@@ -118,7 +124,7 @@ func TestMongoDBRepository_SaveFF_Update(t *testing.T) {
 	}
 
 	// Salvar primeira vez
-	err := repo.SaveFF(entity)
+	err = repo.SaveFF(entity)
 	if err != nil {
 		t.Fatalf("Primeira SaveFF falhou: %v", err)
 	}
@@ -148,7 +154,10 @@ func TestMongoDBRepository_GetFF(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:        uuid.New(),
@@ -157,7 +166,7 @@ func TestMongoDBRepository_GetFF(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	err := repo.SaveFF(entity)
+	err = repo.SaveFF(entity)
 	if err != nil {
 		t.Fatalf("SaveFF falhou: %v", err)
 	}
@@ -180,10 +189,13 @@ func TestMongoDBRepository_GetFF_NotFound(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Tentar buscar flag inexistente
-	_, err := repo.GetFF("non-existent")
+	_, err = repo.GetFF("non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao buscar flag inexistente, obteve nil")
 	}
@@ -203,7 +215,10 @@ func TestMongoDBRepository_GetAllFF(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Salvar múltiplas flags
 	flags := []Entity{
@@ -259,7 +274,10 @@ func TestMongoDBRepository_GetAllFF_Empty(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Buscar em coleção vazia
 	all, err := repo.GetAllFF()
@@ -279,7 +297,10 @@ func TestMongoDBRepository_DeleteFF(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:        uuid.New(),
@@ -289,7 +310,7 @@ func TestMongoDBRepository_DeleteFF(t *testing.T) {
 	}
 
 	// Salvar
-	err := repo.SaveFF(entity)
+	err = repo.SaveFF(entity)
 	if err != nil {
 		t.Fatalf("SaveFF falhou: %v", err)
 	}
@@ -314,10 +335,13 @@ func TestMongoDBRepository_DeleteFF_NotFound(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Tentar deletar flag inexistente
-	err := repo.DeleteFF("non-existent")
+	err = repo.DeleteFF("non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao deletar flag inexistente, obteve nil")
 	}
@@ -330,7 +354,10 @@ func TestMongoDBRepository_InterfaceCompliance(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Verificar se implementa a interface Adapter
 	var _ Adapter = repo
@@ -343,7 +370,10 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Testar operações concurrent
 	done := make(chan bool)
@@ -377,7 +407,7 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 	}
 
 	// Verificar se a flag existe (deve ter sido salva pelo menos uma vez)
-	_, err := repo.GetFF("concurrent-flag")
+	_, err = repo.GetFF("concurrent-flag")
 	if err != nil {
 		t.Fatalf("GetFF falhou após operações concurrent: %v", err)
 	}
@@ -406,7 +436,10 @@ func BenchmarkMongoDBRepository_SaveFF(b *testing.B) {
 		client.Disconnect(context.Background())
 	}()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		b.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:        uuid.New(),
@@ -444,7 +477,10 @@ func BenchmarkMongoDBRepository_GetFF(b *testing.B) {
 		client.Disconnect(context.Background())
 	}()
 
-	repo := NewMongoDBFeatureFlagRepository(db, "flags")
+	repo, err := NewMongoDBFeatureFlagRepository(db)
+	if err != nil {
+		b.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:        uuid.New(),

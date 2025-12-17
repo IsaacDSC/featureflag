@@ -2,9 +2,11 @@ package featureflag
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
+	"github.com/IsaacDSC/featureflag/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,25 +17,37 @@ type MongoDBRepository struct {
 	timeout    time.Duration
 }
 
-func NewMongoDBFeatureFlagRepository(database *mongo.Database, collectionName string) *MongoDBRepository {
-	return &MongoDBRepository{
-		collection: database.Collection(collectionName),
-		timeout:    10 * time.Second,
+const (
+	collectionName     = mongodb.CollectionName("featureflags")
+	flagNameIndexModel = mongodb.IndexModel("flag_name")
+)
+
+func NewMongoDBFeatureFlagRepository(database *mongo.Database) (*MongoDBRepository, error) {
+	collection := database.Collection(collectionName.String())
+
+	err := mongodb.CreateUniqueIndex(collection, flagNameIndexModel)
+	if err != nil {
+		return nil, fmt.Errorf("error on create index: %w", err)
 	}
+
+	return &MongoDBRepository{
+		collection: collection,
+		timeout:    10 * time.Second,
+	}, nil
 }
 
 func (mr *MongoDBRepository) SaveFF(input Entity) error {
 	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
 	defer cancel()
 
-	filter := bson.M{"flag_name": input.FlagName}
+	filter := bson.M{flagNameIndexModel.String(): input.FlagName}
 	update := bson.M{
 		"$set": bson.M{
-			"id":         input.ID,
-			"flag_name":  input.FlagName,
-			"strategy":   input.Strategies,
-			"active":     input.Active,
-			"created_at": input.CreatedAt,
+			id:         input.ID,
+			flagName:   input.FlagName,
+			strategies: input.Strategies,
+			active:     input.Active,
+			createdAt:  input.CreatedAt,
 		},
 	}
 
@@ -50,7 +64,7 @@ func (mr *MongoDBRepository) GetFF(key string) (Entity, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
 	defer cancel()
 
-	filter := bson.M{"flag_name": key}
+	filter := bson.M{flagNameIndexModel.String(): key}
 	var entity Entity
 
 	err := mr.collection.FindOne(ctx, filter).Decode(&entity)
@@ -94,7 +108,7 @@ func (mr *MongoDBRepository) DeleteFF(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
 	defer cancel()
 
-	filter := bson.M{"flag_name": key}
+	filter := bson.M{flagNameIndexModel.String(): key}
 	result, err := mr.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err

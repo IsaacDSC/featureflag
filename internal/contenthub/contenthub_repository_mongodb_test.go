@@ -65,7 +65,10 @@ func TestMongoDBRepository_SaveContentHub(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),
@@ -83,7 +86,7 @@ func TestMongoDBRepository_SaveContentHub(t *testing.T) {
 		},
 	}
 
-	err := repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub falhou: %v", err)
 	}
@@ -114,7 +117,10 @@ func TestMongoDBRepository_SaveContentHub_Update(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),
@@ -126,7 +132,7 @@ func TestMongoDBRepository_SaveContentHub_Update(t *testing.T) {
 	}
 
 	// Salvar primeira vez
-	err := repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(entity)
 	if err != nil {
 		t.Fatalf("Primeira SaveContentHub falhou: %v", err)
 	}
@@ -161,7 +167,10 @@ func TestMongoDBRepository_GetContentHub(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),
@@ -172,7 +181,7 @@ func TestMongoDBRepository_GetContentHub(t *testing.T) {
 		CreatedAt:   time.Now(),
 	}
 
-	err := repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub falhou: %v", err)
 	}
@@ -199,10 +208,13 @@ func TestMongoDBRepository_GetContentHub_NotFound(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Tentar buscar variable inexistente
-	_, err := repo.GetContentHub("non-existent")
+	_, err = repo.GetContentHub("non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao buscar variable inexistente, obteve nil")
 	}
@@ -222,7 +234,10 @@ func TestMongoDBRepository_GetAllContentHub(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Salvar múltiplas entidades
 	entities := []Entity{
@@ -284,7 +299,10 @@ func TestMongoDBRepository_GetAllContentHub_Empty(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Buscar em coleção vazia
 	all, err := repo.GetAllContentHub()
@@ -304,7 +322,10 @@ func TestMongoDBRepository_DeleteContentHub(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),
@@ -316,7 +337,7 @@ func TestMongoDBRepository_DeleteContentHub(t *testing.T) {
 	}
 
 	// Salvar
-	err := repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub falhou: %v", err)
 	}
@@ -341,10 +362,13 @@ func TestMongoDBRepository_DeleteContentHub_NotFound(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Tentar deletar variable inexistente
-	err := repo.DeleteContentHub("non-existent")
+	err = repo.DeleteContentHub("non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao deletar variable inexistente, obteve nil")
 	}
@@ -357,7 +381,10 @@ func TestMongoDBRepository_InterfaceCompliance(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Verificar se implementa a interface Adapter
 	var _ Adapter = repo
@@ -370,7 +397,10 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	// Testar operações concurrent
 	done := make(chan bool)
@@ -406,7 +436,7 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 	}
 
 	// Verificar se a variable existe (deve ter sido salva pelo menos uma vez)
-	_, err := repo.GetContentHub("concurrent-variable")
+	_, err = repo.GetContentHub("concurrent-variable")
 	if err != nil {
 		t.Fatalf("GetContentHub falhou após operações concurrent: %v", err)
 	}
@@ -419,7 +449,10 @@ func TestMongoDBRepository_WithStrategies(t *testing.T) {
 	}
 	defer cleanup()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		t.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),
@@ -439,7 +472,7 @@ func TestMongoDBRepository_WithStrategies(t *testing.T) {
 		},
 	}
 
-	err := repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub com strategies falhou: %v", err)
 	}
@@ -482,7 +515,10 @@ func BenchmarkMongoDBRepository_SaveContentHub(b *testing.B) {
 		client.Disconnect(context.Background())
 	}()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		b.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),
@@ -522,7 +558,10 @@ func BenchmarkMongoDBRepository_GetContentHub(b *testing.B) {
 		client.Disconnect(context.Background())
 	}()
 
-	repo := NewMongoDBContentHubRepository(db, "contenthub")
+	repo, err := NewMongoDBContentHubRepository(db)
+	if err != nil {
+		b.Fatalf("Failed to create repository: %v", err)
+	}
 
 	entity := Entity{
 		ID:          uuid.New(),

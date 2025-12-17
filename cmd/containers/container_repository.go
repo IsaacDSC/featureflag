@@ -22,8 +22,18 @@ func NewRepositoryContainer() RepositoryContainer {
 func NewRepositoryContainerMongodb(client *mongo.Client, mongodbName string) RepositoryContainer {
 	database := client.Database(mongodbName)
 
+	featureFlagRepository, err := featureflag.NewMongoDBFeatureFlagRepository(database)
+	if err != nil {
+		panic(err)
+	}
+
+	contentHubRepository, err := contenthub.NewMongoDBContentHubRepository(database)
+	if err != nil {
+		panic(err)
+	}
+
 	return RepositoryContainer{
-		FeatureFlagRepository: featureflag.NewMongoDBFeatureFlagRepository(database, "featureflags"),
-		ContentHubRepository:  contenthub.NewMongoDBContentHubRepository(database, "contenthub"),
+		FeatureFlagRepository: featureFlagRepository,
+		ContentHubRepository:  contentHubRepository,
 	}
 }

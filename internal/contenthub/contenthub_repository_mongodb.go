@@ -2,9 +2,11 @@ package contenthub
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
+	"github.com/IsaacDSC/featureflag/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -15,28 +17,39 @@ type MongoDBRepository struct {
 	timeout    time.Duration
 }
 
-func NewMongoDBContentHubRepository(database *mongo.Database, collectionName string) *MongoDBRepository {
-	return &MongoDBRepository{
-		collection: database.Collection(collectionName),
-		timeout:    10 * time.Second,
+const (
+	collectionName = mongodb.CollectionName("contenthub")
+	keyIndexModel  = mongodb.IndexModel("key")
+)
+
+func NewMongoDBContentHubRepository(database *mongo.Database) (*MongoDBRepository, error) {
+	collection := database.Collection(collectionName.String())
+	err := mongodb.CreateUniqueIndex(collection, keyIndexModel)
+	if err != nil {
+		return nil, fmt.Errorf("error on create index: %w", err)
 	}
+
+	return &MongoDBRepository{
+		collection: collection,
+		timeout:    10 * time.Second,
+	}, nil
 }
 
 func (mr *MongoDBRepository) SaveContentHub(input Entity) error {
 	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
 	defer cancel()
 
-	filter := bson.M{"key": input.Variable}
+	filter := bson.M{keyIndexModel.String(): input.Variable}
 	update := bson.M{
 		"$set": bson.M{
-			"id":                input.ID,
-			"key":               input.Variable,
-			"value":             input.Value,
-			"description":       input.Description,
-			"active":            input.Active,
-			"created_at":        input.CreatedAt,
-			"session_strategy":  input.SessionsStrategies,
-			"balancer_strategy": input.BalancerStrategy,
+			id:               input.ID,
+			key:              input.Variable,
+			value:            input.Value,
+			description:      input.Description,
+			active:           input.Active,
+			createdAt:        input.CreatedAt,
+			sessionStrategy:  input.SessionsStrategies,
+			balancerStrategy: input.BalancerStrategy,
 		},
 	}
 
@@ -53,7 +66,7 @@ func (mr *MongoDBRepository) GetContentHub(key string) (Entity, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
 	defer cancel()
 
-	filter := bson.M{"key": key}
+	filter := bson.M{keyIndexModel.String(): key}
 	var entity Entity
 
 	err := mr.collection.FindOne(ctx, filter).Decode(&entity)
