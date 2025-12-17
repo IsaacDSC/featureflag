@@ -1,6 +1,8 @@
 package contenthub
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,10 +20,9 @@ type Dto struct {
 }
 
 func (c *Dto) ToDomain() (Entity, error) {
-	// sessionStrategy, err := c.SessionStrategy.ToDomain()
-	// if err != nil {
-	// 	return Entity{}, err
-	// }
+	if strings.TrimSpace(c.Variable) == "" {
+		return Entity{}, errors.New("key is required")
+	}
 
 	if err := c.BalancerStrategy.Validate(); err != nil {
 		return Entity{}, err
