@@ -20,13 +20,14 @@ type Strategy[T any] struct {
 30% -> percent -> (100-30)/10 = 7
 90% -> percent -> (100-90)/10 = 1
 */
+const MaxCall = 10
+
+// Calculate -> This function Calculate the value of the strategy
 func (s *Strategy[T]) Calculate() uint {
-	const MaxCall = 10
 	return uint(math.Ceil((float64(100) - s.Percent) / float64(MaxCall)))
 }
 
 func (s *Strategy[T]) SetQtdCall() {
-	const MaxCall = 10
 	if s.QtdCall == MaxCall {
 		s.QtdCall = 0
 	} else {
@@ -49,7 +50,7 @@ func (s *Strategy[T]) Value(sessionID string) (output T) {
 }
 
 // Bool -> This function return active or inactive by strategy
-func (s *Strategy[T]) Bool(sessionID string) (output bool) {
+func (s *Strategy[T]) StrategyBool(sessionID string) (output bool) {
 	if len(s.SessionsID) == 0 {
 		return s.Calculate() <= s.QtdCall
 	}
@@ -59,4 +60,11 @@ func (s *Strategy[T]) Bool(sessionID string) (output bool) {
 	}
 
 	return false
+}
+
+func (s *Strategy[T]) Balancer() bool {
+	isActive := s.Calculate() <= s.QtdCall
+	s.SetQtdCall()
+
+	return isActive
 }

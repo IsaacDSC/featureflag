@@ -261,7 +261,7 @@ func TestFeatureFlagSDK_GetFeatureFlag(t *testing.T) {
 			wantError: nil,
 		},
 		{
-			name: "should return error when strategy requires sessionID but none provided",
+			name: "should use balancer when strategy is enabled but no sessionID provided",
 			inMemoryFlags: map[string]Flag{
 				"feature-with-strategy": {
 					Active:   true,
@@ -276,11 +276,11 @@ func TestFeatureFlagSDK_GetFeatureFlag(t *testing.T) {
 			ffDefault: false,
 			key:       "feature-with-strategy",
 			sessionID: nil,
-			wantBool:  false,
-			wantError: ErrInvalidStrategy,
+			wantBool:  true, // Balancer: Calculate()=5, QtdCall=5, 5<=5 = true
+			wantError: nil,
 		},
 		{
-			name: "should return default when strategy requires sessionID but none provided",
+			name: "should use balancer returning false when QtdCall is below threshold",
 			inMemoryFlags: map[string]Flag{
 				"feature-with-strategy": {
 					Active:   true,
@@ -288,15 +288,15 @@ func TestFeatureFlagSDK_GetFeatureFlag(t *testing.T) {
 					Strategy: stg.Strategy[bool]{
 						WithStrategy: true,
 						Percent:      50,
-						QtdCall:      5,
+						QtdCall:      3,
 					},
 				},
 			},
 			ffDefault: true,
 			key:       "feature-with-strategy",
 			sessionID: nil,
-			wantBool:  true,
-			wantError: ErrInvalidStrategy,
+			wantBool:  false, // Balancer: Calculate()=5, QtdCall=3, 5<=3 = false
+			wantError: nil,
 		},
 		{
 			name: "should validate strategy with sessionID - active case",
@@ -677,6 +677,553 @@ func TestFeatureFlagSDK_getAllFlags_ErrorCases(t *testing.T) {
 
 		if err == nil {
 			t.Error("getAllFlags() expected error for unreachable server, got nil")
+		}
+	})
+}
+
+func TestHasChanged(t *testing.T) {
+	tests := []struct {
+		name     string
+		oldFlag  Flag
+		newFlag  Flag
+		expected bool
+	}{
+		{
+			name: "should return false when no changes - all fields equal",
+			oldFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					SessionsID:   map[string]bool{"user1": true},
+					QtdCall:      5, // Deve ser ignorado na comparação
+				},
+			},
+			newFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					SessionsID:   map[string]bool{"user1": true},
+					QtdCall:      0, // Diferente, mas deve ser ignorado
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "should return true when Active changed",
+			oldFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+			},
+			newFlag: Flag{
+				Active:   false,
+				FlagName: "test",
+			},
+			expected: true,
+		},
+		{
+			name: "should return true when Percent changed",
+			oldFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{Percent: 50},
+			},
+			newFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{Percent: 75},
+			},
+			expected: true,
+		},
+		{
+			name: "should return true when SessionsID changed - new key added",
+			oldFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: map[string]bool{"user1": true},
+				},
+			},
+			newFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: map[string]bool{"user1": true, "user2": true},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "should return true when SessionsID changed - value changed",
+			oldFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: map[string]bool{"user1": true},
+				},
+			},
+			newFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: map[string]bool{"user1": false},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "should return true when WithStrategy changed",
+			oldFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{WithStrategy: false},
+			},
+			newFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{WithStrategy: true},
+			},
+			expected: true,
+		},
+		{
+			name: "should return false when only QtdCall changed",
+			oldFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      1,
+				},
+			},
+			newFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      10,
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "should return false when both SessionsID are nil",
+			oldFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: nil,
+				},
+			},
+			newFlag: Flag{
+				Active:   true,
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: nil,
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "should return true when SessionsID nil vs empty map",
+			oldFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: nil,
+				},
+			},
+			newFlag: Flag{
+				FlagName: "test",
+				Strategy: stg.Strategy[bool]{
+					SessionsID: map[string]bool{},
+				},
+			},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := hasChanged(tt.oldFlag, tt.newFlag)
+			if result != tt.expected {
+				t.Errorf("hasChanged() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestFilterChangedFlags(t *testing.T) {
+	t.Run("should identify changed and new flags", func(t *testing.T) {
+		memoryFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      7, // Important local state
+				},
+			},
+			"flag2": {
+				Active:   false,
+				FlagName: "flag2",
+			},
+		}
+
+		serverFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      75, // Changed
+					QtdCall:      0,
+				},
+			},
+			"flag2": {
+				Active:   false, // No change
+				FlagName: "flag2",
+			},
+			"flag3": { // New flag
+				Active:   true,
+				FlagName: "flag3",
+			},
+		}
+
+		changed := filterChangedFlags(serverFlags, memoryFlags)
+
+		// Should return flag1 (changed) and flag3 (new)
+		if len(changed) != 2 {
+			t.Errorf("expected 2 changed flags, got %d", len(changed))
+		}
+
+		if _, ok := changed["flag1"]; !ok {
+			t.Error("flag1 should be in changed flags")
+		}
+
+		if _, ok := changed["flag3"]; !ok {
+			t.Error("flag3 should be in changed flags")
+		}
+
+		if _, ok := changed["flag2"]; ok {
+			t.Error("flag2 should NOT be in changed flags")
+		}
+	})
+
+	t.Run("should preserve QtdCall when strategy is active", func(t *testing.T) {
+		memoryFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      7,
+				},
+			},
+		}
+
+		serverFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      75, // Changed
+					QtdCall:      0,  // Server sends 0
+				},
+			},
+		}
+
+		changed := filterChangedFlags(serverFlags, memoryFlags)
+
+		// QtdCall should be preserved from memory
+		if changed["flag1"].Strategy.QtdCall != 7 {
+			t.Errorf("expected QtdCall to be preserved as 7, got %d", changed["flag1"].Strategy.QtdCall)
+		}
+	})
+
+	t.Run("should not preserve QtdCall when strategy becomes inactive", func(t *testing.T) {
+		memoryFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      7,
+				},
+			},
+		}
+
+		serverFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: false, // Strategy disabled
+					Percent:      50,
+					QtdCall:      0,
+				},
+			},
+		}
+
+		changed := filterChangedFlags(serverFlags, memoryFlags)
+
+		// QtdCall should not be preserved because strategy was disabled
+		if changed["flag1"].Strategy.QtdCall != 0 {
+			t.Errorf("expected QtdCall to be 0 when strategy becomes inactive, got %d", changed["flag1"].Strategy.QtdCall)
+		}
+	})
+
+	t.Run("should return empty map when no changes", func(t *testing.T) {
+		flags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      5,
+				},
+			},
+		}
+
+		// Server flags identical (except QtdCall)
+		serverFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					WithStrategy: true,
+					Percent:      50,
+					QtdCall:      0, // Different but ignored
+				},
+			},
+		}
+
+		changed := filterChangedFlags(serverFlags, flags)
+
+		if len(changed) != 0 {
+			t.Errorf("expected 0 changed flags, got %d", len(changed))
+		}
+	})
+
+	t.Run("should handle empty memory flags", func(t *testing.T) {
+		memoryFlags := map[string]Flag{}
+
+		serverFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+			},
+		}
+
+		changed := filterChangedFlags(serverFlags, memoryFlags)
+
+		if len(changed) != 1 {
+			t.Errorf("expected 1 changed flag (new), got %d", len(changed))
+		}
+	})
+}
+
+func TestFeatureFlagSDK_GetFeatureFlag_QtdCallIncrement(t *testing.T) {
+	t.Run("should increment QtdCall on sequential calls with balancer strategy", func(t *testing.T) {
+		// 90% percent means Calculate() = 1
+		// So QtdCall >= 1 returns true
+		// QtdCall = 0 -> false (0 < 1)
+		// QtdCall = 1 -> true (1 >= 1)
+		// QtdCall = 2 -> true (2 >= 1)
+		// etc.
+		sdk := &FeatureFlagSDK{
+			host:      "http://localhost:8080",
+			ffDefault: false,
+			inMemoryFlags: map[string]Flag{
+				"teste1": {
+					Active:   false,
+					FlagName: "teste1",
+					Strategy: stg.Strategy[bool]{
+						WithStrategy: true,
+						Percent:      90, // Calculate() = 1
+						QtdCall:      0,
+					},
+				},
+			},
+		}
+
+		expectedResults := []bool{
+			false, // QtdCall=0 before, Calculate()=1, 0 >= 1 = false, then QtdCall becomes 1
+			true,  // QtdCall=1 before, 1 >= 1 = true, then QtdCall becomes 2
+			true,  // QtdCall=2 before, 2 >= 1 = true, then QtdCall becomes 3
+			true,  // QtdCall=3 before, 3 >= 1 = true, then QtdCall becomes 4
+			true,  // QtdCall=4 before, 4 >= 1 = true, then QtdCall becomes 5
+		}
+
+		for i, expected := range expectedResults {
+			result := sdk.GetFeatureFlag("teste1")
+			if result.Bool != expected {
+				t.Errorf("Call %d: GetFeatureFlag() bool = %v, want %v (QtdCall=%d)",
+					i+1, result.Bool, expected, sdk.inMemoryFlags["teste1"].Strategy.QtdCall)
+			}
+		}
+
+		// Verify final QtdCall value
+		finalQtdCall := sdk.inMemoryFlags["teste1"].Strategy.QtdCall
+		if finalQtdCall != 5 {
+			t.Errorf("Final QtdCall = %d, want 5", finalQtdCall)
+		}
+	})
+
+	t.Run("should increment QtdCall with 10% percent (9 false then true)", func(t *testing.T) {
+		// 10% percent means Calculate() = 9
+		// QtdCall needs to be >= 9 to return true
+		sdk := &FeatureFlagSDK{
+			host:      "http://localhost:8080",
+			ffDefault: false,
+			inMemoryFlags: map[string]Flag{
+				"feature-10pct": {
+					Active:   false,
+					FlagName: "feature-10pct",
+					Strategy: stg.Strategy[bool]{
+						WithStrategy: true,
+						Percent:      10, // Calculate() = 9
+						QtdCall:      0,
+					},
+				},
+			},
+		}
+
+		// First 9 calls should return false, 10th and onwards should return true
+		for i := 1; i <= 11; i++ {
+			result := sdk.GetFeatureFlag("feature-10pct")
+			expected := i > 9 // true when i > 9 (calls 10 and 11)
+			if result.Bool != expected {
+				t.Errorf("Call %d: GetFeatureFlag() bool = %v, want %v", i, result.Bool, expected)
+			}
+		}
+	})
+
+	t.Run("should increment QtdCall with sessionID strategy", func(t *testing.T) {
+		sdk := &FeatureFlagSDK{
+			host:      "http://localhost:8080",
+			ffDefault: false,
+			inMemoryFlags: map[string]Flag{
+				"session-flag": {
+					Active:   false,
+					FlagName: "session-flag",
+					Strategy: stg.Strategy[bool]{
+						WithStrategy: true,
+						SessionsID:   map[string]bool{},
+						Percent:      90, // Calculate() = 1
+						QtdCall:      0,
+					},
+				},
+			},
+		}
+
+		// With empty SessionsID, it falls back to percent calculation
+		// First call should be false, rest true
+		for i := 1; i <= 5; i++ {
+			result := sdk.GetFeatureFlag("session-flag", "any-session")
+			expected := i > 1
+			if result.Bool != expected {
+				t.Errorf("Call %d: GetFeatureFlag() bool = %v, want %v", i, result.Bool, expected)
+			}
+		}
+	})
+}
+
+func TestMergeFlags(t *testing.T) {
+	t.Run("should merge changed flags correctly", func(t *testing.T) {
+		memoryFlags := map[string]Flag{
+			"flag1": {
+				Active:   true,
+				FlagName: "flag1",
+				Strategy: stg.Strategy[bool]{
+					QtdCall: 7,
+				},
+			},
+			"flag2": {
+				Active:   false,
+				FlagName: "flag2",
+				Strategy: stg.Strategy[bool]{
+					QtdCall: 3,
+				},
+			},
+		}
+
+		serverFlags := map[string]Flag{
+			"flag1": {Active: true, FlagName: "flag1"},
+			"flag2": {Active: true, FlagName: "flag2"}, // Alterado
+		}
+
+		changedFlags := map[string]Flag{
+			"flag2": {
+				Active:   true,
+				FlagName: "flag2",
+				Strategy: stg.Strategy[bool]{
+					QtdCall: 3, // Preserved
+				},
+			},
+		}
+
+		result := mergeFlags(memoryFlags, serverFlags, changedFlags)
+
+		// flag1 should keep the in-memory version (unchanged)
+		if result["flag1"].Strategy.QtdCall != 7 {
+			t.Errorf("flag1 QtdCall should be preserved as 7, got %d", result["flag1"].Strategy.QtdCall)
+		}
+
+		// flag2 should use the changed version
+		if result["flag2"].Active != true {
+			t.Error("flag2 Active should be true (changed)")
+		}
+	})
+
+	t.Run("should remove deleted flags", func(t *testing.T) {
+		memoryFlags := map[string]Flag{
+			"flag1": {Active: true, FlagName: "flag1"},
+			"flag2": {Active: true, FlagName: "flag2"},
+			"flag3": {Active: true, FlagName: "flag3"}, // Will be deleted
+		}
+
+		serverFlags := map[string]Flag{
+			"flag1": {Active: true, FlagName: "flag1"},
+			"flag2": {Active: true, FlagName: "flag2"},
+			// flag3 no longer exists on server
+		}
+
+		changedFlags := map[string]Flag{} // No changes
+
+		result := mergeFlags(memoryFlags, serverFlags, changedFlags)
+
+		if len(result) != 2 {
+			t.Errorf("expected 2 flags after merge, got %d", len(result))
+		}
+
+		if _, ok := result["flag3"]; ok {
+			t.Error("flag3 should have been removed")
+		}
+	})
+
+	t.Run("should add new flags from changes", func(t *testing.T) {
+		memoryFlags := map[string]Flag{
+			"flag1": {Active: true, FlagName: "flag1"},
+		}
+
+		serverFlags := map[string]Flag{
+			"flag1": {Active: true, FlagName: "flag1"},
+			"flag2": {Active: true, FlagName: "flag2"}, // New
+		}
+
+		changedFlags := map[string]Flag{
+			"flag2": {Active: true, FlagName: "flag2"},
+		}
+
+		result := mergeFlags(memoryFlags, serverFlags, changedFlags)
+
+		if len(result) != 2 {
+			t.Errorf("expected 2 flags after merge, got %d", len(result))
+		}
+
+		if _, ok := result["flag2"]; !ok {
+			t.Error("flag2 should have been added")
 		}
 	})
 }

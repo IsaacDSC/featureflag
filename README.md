@@ -59,18 +59,16 @@ curl -X PATCH http://localhost:3000/featureflag -H "Content-Type: application/js
 _Como criar uma ff com 50% ou seja 50% das chamadas serão ativas e 50% das chamadas serão desativadas_
 
 ```sh
-###
-PATCH http://localhost:3000/
-Accept: application/json
-Content-Type: application/json
-
-{
-  "flag_name": "teste1",
-  "active": true,
-  "strategy": {
-    "percent": 50
-  }
-}
+curl -X PATCH http://localhost:3000/featureflag \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_name": "teste1",
+    "active": true,
+    "strategy": {
+      "percent": 50
+    }
+  }'
 ```
 
 ### Example 3
@@ -79,18 +77,16 @@ _Como criar uma ff com configurações utilizando sessions, onde somente quem es
 flag como ligada_
 
 ```sh
-###
-PATCH http://localhost:3000/
-Accept: application/json
-Content-Type: application/json
-
-{
-  "flag_name": "teste3",
-  "active": true,
-  "strategy": {
-     "session_id": ["34eec623-c9f2-494e-bf66-57a85139fd69"]
-  }
-}
+curl -X PATCH http://localhost:3000/featureflag \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_name": "teste3",
+    "active": true,
+    "strategy": {
+      "session_id": ["34eec623-c9f2-494e-bf66-57a85139fd69"]
+    }
+  }'
 ```
 
 ### Usage ff
