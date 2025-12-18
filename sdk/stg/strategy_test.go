@@ -251,7 +251,7 @@ func TestStrategy_Bool(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.strategy.Bool(tt.sessionID)
+			got := tt.strategy.StrategyBool(tt.sessionID)
 			if got != tt.want {
 				t.Errorf("Bool() = %v, want %v", got, tt.want)
 			}

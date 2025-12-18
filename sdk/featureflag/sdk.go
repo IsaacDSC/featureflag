@@ -176,14 +176,15 @@ func (ff FeatureFlagSDK) GetFeatureFlag(key string, sessionID ...string) FFRespo
 		return FFResponse{flag.Active, nil}
 	}
 
-	if len(sessionID) == 0 {
-		return FFResponse{ff.ffDefault, ErrInvalidStrategy}
+	if len(sessionID) > 0 {
+		isActive := flag.ValidateStrategy(sessionID[0]).
+			Increment().
+			Bool()
+
+		return FFResponse{isActive, nil}
 	}
 
-	isActive := flag.ValidateStrategy(sessionID[0]).
-		Increment().
-		Bool()
-
+	isActive := flag.Balancer().Bool()
 	return FFResponse{isActive, nil}
 }
 

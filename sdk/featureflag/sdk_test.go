@@ -261,7 +261,7 @@ func TestFeatureFlagSDK_GetFeatureFlag(t *testing.T) {
 			wantError: nil,
 		},
 		{
-			name: "should return error when strategy requires sessionID but none provided",
+			name: "should use balancer when strategy is enabled but no sessionID provided",
 			inMemoryFlags: map[string]Flag{
 				"feature-with-strategy": {
 					Active:   true,
@@ -276,11 +276,11 @@ func TestFeatureFlagSDK_GetFeatureFlag(t *testing.T) {
 			ffDefault: false,
 			key:       "feature-with-strategy",
 			sessionID: nil,
-			wantBool:  false,
-			wantError: ErrInvalidStrategy,
+			wantBool:  true, // Balancer: Calculate()=5, QtdCall=5, 5<=5 = true
+			wantError: nil,
 		},
 		{
-			name: "should return default when strategy requires sessionID but none provided",
+			name: "should use balancer returning false when QtdCall is below threshold",
 			inMemoryFlags: map[string]Flag{
 				"feature-with-strategy": {
 					Active:   true,
@@ -288,15 +288,15 @@ func TestFeatureFlagSDK_GetFeatureFlag(t *testing.T) {
 					Strategy: stg.Strategy[bool]{
 						WithStrategy: true,
 						Percent:      50,
-						QtdCall:      5,
+						QtdCall:      3,
 					},
 				},
 			},
 			ffDefault: true,
 			key:       "feature-with-strategy",
 			sessionID: nil,
-			wantBool:  true,
-			wantError: ErrInvalidStrategy,
+			wantBool:  false, // Balancer: Calculate()=5, QtdCall=3, 5<=3 = false
+			wantError: nil,
 		},
 		{
 			name: "should validate strategy with sessionID - active case",

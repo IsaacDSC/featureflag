@@ -18,7 +18,12 @@ func (ff Flag) Increment() Flag {
 }
 
 func (ff Flag) ValidateStrategy(sessionID string) Flag {
-	ff.Active = ff.Strategy.Bool(sessionID)
+	ff.Active = ff.Strategy.StrategyBool(sessionID)
+	return ff
+}
+
+func (ff Flag) Balancer() Flag {
+	ff.Active = ff.Strategy.Balancer()
 	return ff
 }
 
