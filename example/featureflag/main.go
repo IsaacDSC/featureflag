@@ -33,6 +33,9 @@ func main() {
 		isActive3 := ff.GetFeatureFlag("new_name1").Val()
 		fmt.Println("@@@", isActive3)
 
+		test1, err := ff.GetFeatureFlag("teste1").Err()
+		fmt.Println("@@@ teste1: ", test1, err)
+
 		w.WriteHeader(http.StatusOK)
 	})
 
