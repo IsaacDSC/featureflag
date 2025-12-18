@@ -165,7 +165,7 @@ func (fr FFResponse) Val() bool {
 	return fr.Bool
 }
 
-func (ff FeatureFlagSDK) GetFeatureFlag(key string, sessionID ...string) FFResponse {
+func (ff *FeatureFlagSDK) GetFeatureFlag(key string, sessionID ...string) FFResponse {
 	flag, ok := ff.inMemoryFlags[key]
 
 	if !ok {
@@ -178,15 +178,14 @@ func (ff FeatureFlagSDK) GetFeatureFlag(key string, sessionID ...string) FFRespo
 	}
 
 	if len(sessionID) > 0 {
-		isActive := flag.ValidateStrategy(sessionID[0]).
-			Increment().
-			Bool()
-
-		return FFResponse{isActive, nil}
+		updatedFlag := flag.ValidateStrategy(sessionID[0]).Increment()
+		ff.inMemoryFlags[key] = updatedFlag
+		return FFResponse{updatedFlag.Active, nil}
 	}
 
-	isActive := flag.Balancer().Bool()
-	return FFResponse{isActive, nil}
+	updatedFlag := flag.Balancer()
+	ff.inMemoryFlags[key] = updatedFlag
+	return FFResponse{updatedFlag.Active, nil}
 }
 
 func (ff FeatureFlagSDK) getAllFlags(ctx context.Context) (map[string]Flag, error) {

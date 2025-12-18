@@ -64,7 +64,7 @@ func (s *Strategy[T]) StrategyBool(sessionID string) (output bool) {
 
 func (s *Strategy[T]) Balancer() bool {
 	isActive := s.Calculate() <= s.QtdCall
-	s.QtdCall++
+	s.SetQtdCall()
 
 	return isActive
 }

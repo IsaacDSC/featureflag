@@ -1023,6 +1023,112 @@ func TestFilterChangedFlags(t *testing.T) {
 	})
 }
 
+func TestFeatureFlagSDK_GetFeatureFlag_QtdCallIncrement(t *testing.T) {
+	t.Run("should increment QtdCall on sequential calls with balancer strategy", func(t *testing.T) {
+		// 90% percent means Calculate() = 1
+		// So QtdCall >= 1 returns true
+		// QtdCall = 0 -> false (0 < 1)
+		// QtdCall = 1 -> true (1 >= 1)
+		// QtdCall = 2 -> true (2 >= 1)
+		// etc.
+		sdk := &FeatureFlagSDK{
+			host:      "http://localhost:8080",
+			ffDefault: false,
+			inMemoryFlags: map[string]Flag{
+				"teste1": {
+					Active:   false,
+					FlagName: "teste1",
+					Strategy: stg.Strategy[bool]{
+						WithStrategy: true,
+						Percent:      90, // Calculate() = 1
+						QtdCall:      0,
+					},
+				},
+			},
+		}
+
+		expectedResults := []bool{
+			false, // QtdCall=0 before, Calculate()=1, 0 >= 1 = false, then QtdCall becomes 1
+			true,  // QtdCall=1 before, 1 >= 1 = true, then QtdCall becomes 2
+			true,  // QtdCall=2 before, 2 >= 1 = true, then QtdCall becomes 3
+			true,  // QtdCall=3 before, 3 >= 1 = true, then QtdCall becomes 4
+			true,  // QtdCall=4 before, 4 >= 1 = true, then QtdCall becomes 5
+		}
+
+		for i, expected := range expectedResults {
+			result := sdk.GetFeatureFlag("teste1")
+			if result.Bool != expected {
+				t.Errorf("Call %d: GetFeatureFlag() bool = %v, want %v (QtdCall=%d)",
+					i+1, result.Bool, expected, sdk.inMemoryFlags["teste1"].Strategy.QtdCall)
+			}
+		}
+
+		// Verify final QtdCall value
+		finalQtdCall := sdk.inMemoryFlags["teste1"].Strategy.QtdCall
+		if finalQtdCall != 5 {
+			t.Errorf("Final QtdCall = %d, want 5", finalQtdCall)
+		}
+	})
+
+	t.Run("should increment QtdCall with 10% percent (9 false then true)", func(t *testing.T) {
+		// 10% percent means Calculate() = 9
+		// QtdCall needs to be >= 9 to return true
+		sdk := &FeatureFlagSDK{
+			host:      "http://localhost:8080",
+			ffDefault: false,
+			inMemoryFlags: map[string]Flag{
+				"feature-10pct": {
+					Active:   false,
+					FlagName: "feature-10pct",
+					Strategy: stg.Strategy[bool]{
+						WithStrategy: true,
+						Percent:      10, // Calculate() = 9
+						QtdCall:      0,
+					},
+				},
+			},
+		}
+
+		// First 9 calls should return false, 10th and onwards should return true
+		for i := 1; i <= 11; i++ {
+			result := sdk.GetFeatureFlag("feature-10pct")
+			expected := i > 9 // true when i > 9 (calls 10 and 11)
+			if result.Bool != expected {
+				t.Errorf("Call %d: GetFeatureFlag() bool = %v, want %v", i, result.Bool, expected)
+			}
+		}
+	})
+
+	t.Run("should increment QtdCall with sessionID strategy", func(t *testing.T) {
+		sdk := &FeatureFlagSDK{
+			host:      "http://localhost:8080",
+			ffDefault: false,
+			inMemoryFlags: map[string]Flag{
+				"session-flag": {
+					Active:   false,
+					FlagName: "session-flag",
+					Strategy: stg.Strategy[bool]{
+						WithStrategy: true,
+						SessionsID:   map[string]bool{},
+						Percent:      90, // Calculate() = 1
+						QtdCall:      0,
+					},
+				},
+			},
+		}
+
+		// With empty SessionsID, it falls back to percent calculation
+		// First call should be false, rest true
+		for i := 1; i <= 5; i++ {
+			result := sdk.GetFeatureFlag("session-flag", "any-session")
+			expected := i > 1
+			if result.Bool != expected {
+				t.Errorf("Call %d: GetFeatureFlag() bool = %v, want %v", i, result.Bool, expected)
+			}
+		}
+	})
+}
+
 func TestMergeFlags(t *testing.T) {
 	t.Run("should merge changed flags correctly", func(t *testing.T) {
 		memoryFlags := map[string]Flag{
