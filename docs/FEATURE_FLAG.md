@@ -1,9 +1,9 @@
 
-## Featureflag
+## Feature Flag
 
-### Featureflag do tipo disjuntor
+### Circuit Breaker Type Feature Flag
 
-_Como criar uma ff do tipo disjuntor sem strategy, priorizando a simplicidade_
+_How to create a circuit breaker type feature flag without strategy, prioritizing simplicity_
 
 ```sh
 curl -X PATCH http://localhost:3000/featureflag -H "Content-Type: application/json" -d '{"flag_name": "new_name_invalid", "description": "new_description", "active": false}'
@@ -11,7 +11,7 @@ curl -X PATCH http://localhost:3000/featureflag -H "Content-Type: application/js
 
 ### Example 2
 
-_Como criar uma ff com 50% ou seja 50% das chamadas serão ativas e 50% das chamadas serão desativadas_
+_How to create a feature flag with 50%, meaning 50% of calls will be active and 50% of calls will be inactive_
 
 ```sh
 curl -X PATCH http://localhost:3000/featureflag \
@@ -28,8 +28,7 @@ curl -X PATCH http://localhost:3000/featureflag \
 
 ### Example 3
 
-_Como criar uma ff com configurações utilizando sessions, onde somente quem estiver com a session receberá a feature
-flag como ligada_
+_How to create a feature flag with session configurations, where only those with the session will receive the feature flag as enabled_
 
 ```sh
 curl -X PATCH http://localhost:3000/featureflag \
@@ -44,7 +43,7 @@ curl -X PATCH http://localhost:3000/featureflag \
   }'
 ```
 
-### Usage ff
+### Feature Flag Usage
 
 ```go
 package main
@@ -81,6 +80,9 @@ func main() {
 
 		isActive3 := ff.GetFeatureFlag("new_name1").Val()
 		fmt.Println("@@@", isActive3)
+
+		test1, err := ff.GetFeatureFlag("teste1").Err()
+		fmt.Println("@@@ teste1: ", test1, err)
 
 		w.WriteHeader(http.StatusOK)
 	})
