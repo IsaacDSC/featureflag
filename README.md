@@ -98,3 +98,4 @@ Authorization: <token>
 POST http://localhost:3000/auth
 Authorization: <token>
 ```
+
