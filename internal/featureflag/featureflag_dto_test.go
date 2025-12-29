@@ -266,4 +266,3 @@ func TestDtoFromDomain(t *testing.T) {
 		})
 	}
 }
-

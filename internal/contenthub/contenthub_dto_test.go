@@ -393,5 +393,3 @@ func TestFromDomain_PreservesAllFields(t *testing.T) {
 		t.Error("CreatedAt not properly preserved")
 	}
 }
-
-

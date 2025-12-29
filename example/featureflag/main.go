@@ -36,6 +36,12 @@ func main() {
 		test1, err := ff.GetFeatureFlag("teste1").Err()
 		fmt.Println("@@@ teste1: ", test1, err)
 
+		test3, err := ff.GetFeatureFlag("teste3", "34eec623-c9f2-494e-bf66-57a85139fd69").Err()
+		fmt.Println("@@@ teste3: ", test3, err)
+
+		test4, err := ff.GetFeatureFlag("teste3", "not-found-session-id").Err()
+		fmt.Println("@@@ teste4: ", test4, err)
+
 		w.WriteHeader(http.StatusOK)
 	})
 
