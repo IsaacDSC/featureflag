@@ -1,6 +1,7 @@
 package contenthub
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
@@ -17,8 +18,8 @@ func NewContentHubRepository(filePathContentHub string) *Repository {
 	}
 }
 
-func (fr Repository) SaveContentHub(input Entity) error {
-	featuresFlags, err := fr.GetAllContentHub()
+func (fr Repository) SaveContentHub(ctx context.Context, input Entity) error {
+	featuresFlags, err := fr.GetAllContentHub(ctx)
 	if err != nil {
 		return err
 	}
@@ -32,7 +33,7 @@ func (fr Repository) SaveContentHub(input Entity) error {
 	return os.WriteFile(fr.filePathContentHub, b, 0644)
 }
 
-func (fr Repository) GetContentHub(key string) (Entity, error) {
+func (fr Repository) GetContentHub(ctx context.Context, key string) (Entity, error) {
 	b, err := os.ReadFile(fr.filePathContentHub)
 	if err != nil {
 		return Entity{}, err
@@ -54,7 +55,7 @@ func (fr Repository) GetContentHub(key string) (Entity, error) {
 	return Entity{}, errorutils.NewNotFoundError("contenthub")
 }
 
-func (fr Repository) GetAllContentHub() (map[string]Entity, error) {
+func (fr Repository) GetAllContentHub(ctx context.Context) (map[string]Entity, error) {
 	b, err := os.ReadFile(fr.filePathContentHub)
 	if err != nil {
 		return map[string]Entity{}, err
@@ -72,8 +73,8 @@ func (fr Repository) GetAllContentHub() (map[string]Entity, error) {
 	return ff, nil
 }
 
-func (fr Repository) DeleteContentHub(key string) error {
-	featuresflags, err := fr.GetAllContentHub()
+func (fr Repository) DeleteContentHub(ctx context.Context, key string) error {
+	featuresflags, err := fr.GetAllContentHub(ctx)
 	if err != nil {
 		return err
 	}

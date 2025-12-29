@@ -68,13 +68,14 @@ func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	key := r.PathValue("key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.RemoveFeatureFlag(key); err != nil {
+	if err := h.service.RemoveFeatureFlag(ctx, key); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -84,6 +85,7 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	key := r.PathValue("key")
 
 	if key == "" {
@@ -93,7 +95,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Header.Get("session_id")
-	ff, err := h.service.GetFeatureFlag(key, sessionID)
+	ff, err := h.service.GetFeatureFlag(ctx, key, sessionID)
 
 	if err != nil {
 		switch err.(type) {
@@ -120,6 +122,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	key := r.PathValue("key")
 
 	if key == "" {
@@ -129,7 +132,7 @@ func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Header.Get("session_id")
-	statusFF, err := h.service.GetFeatureFlagBySDK(key, sessionID)
+	statusFF, err := h.service.GetFeatureFlagBySDK(ctx, key, sessionID)
 
 	if err != nil {
 		switch err.(type) {
@@ -149,10 +152,11 @@ func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	// TODO: Possibilitar receber um parametro de query para filtrar por status
 	// status := r.URL.Query().Get("status")
 
-	database, err := h.service.GetAllFeatureFlag()
+	database, err := h.service.GetAllFeatureFlag(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

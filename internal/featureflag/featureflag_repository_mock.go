@@ -5,6 +5,7 @@
 package featureflag
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -34,59 +35,59 @@ func (m *MockFeatureFlagRepository) EXPECT() *MockFeatureFlagRepositoryMockRecor
 }
 
 // DeleteFF mocks base method.
-func (m *MockFeatureFlagRepository) DeleteFF(key string) error {
+func (m *MockFeatureFlagRepository) DeleteFF(ctx context.Context, key string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteFF", key)
+	ret := m.ctrl.Call(m, "DeleteFF", ctx, key)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteFF indicates an expected call of DeleteFF.
-func (mr *MockFeatureFlagRepositoryMockRecorder) DeleteFF(key interface{}) *gomock.Call {
+func (mr *MockFeatureFlagRepositoryMockRecorder) DeleteFF(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).DeleteFF), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).DeleteFF), ctx, key)
 }
 
 // GetAllFF mocks base method.
-func (m *MockFeatureFlagRepository) GetAllFF() (map[string]Entity, error) {
+func (m *MockFeatureFlagRepository) GetAllFF(ctx context.Context) (map[string]Entity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllFF")
+	ret := m.ctrl.Call(m, "GetAllFF", ctx)
 	ret0, _ := ret[0].(map[string]Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllFF indicates an expected call of GetAllFF.
-func (mr *MockFeatureFlagRepositoryMockRecorder) GetAllFF() *gomock.Call {
+func (mr *MockFeatureFlagRepositoryMockRecorder) GetAllFF(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).GetAllFF))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).GetAllFF), ctx)
 }
 
 // GetFF mocks base method.
-func (m *MockFeatureFlagRepository) GetFF(key string) (Entity, error) {
+func (m *MockFeatureFlagRepository) GetFF(ctx context.Context, key string) (Entity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFF", key)
+	ret := m.ctrl.Call(m, "GetFF", ctx, key)
 	ret0, _ := ret[0].(Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetFF indicates an expected call of GetFF.
-func (mr *MockFeatureFlagRepositoryMockRecorder) GetFF(key interface{}) *gomock.Call {
+func (mr *MockFeatureFlagRepositoryMockRecorder) GetFF(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).GetFF), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).GetFF), ctx, key)
 }
 
 // SaveFF mocks base method.
-func (m *MockFeatureFlagRepository) SaveFF(input Entity) error {
+func (m *MockFeatureFlagRepository) SaveFF(ctx context.Context, input Entity) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveFF", input)
+	ret := m.ctrl.Call(m, "SaveFF", ctx, input)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveFF indicates an expected call of SaveFF.
-func (mr *MockFeatureFlagRepositoryMockRecorder) SaveFF(input interface{}) *gomock.Call {
+func (mr *MockFeatureFlagRepositoryMockRecorder) SaveFF(ctx, input interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).SaveFF), input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).SaveFF), ctx, input)
 }

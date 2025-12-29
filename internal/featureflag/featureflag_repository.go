@@ -1,6 +1,7 @@
 package featureflag
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 
@@ -14,8 +15,8 @@ func NewFeatureFlagRepository() *Repository {
 	return &Repository{}
 }
 
-func (fr Repository) SaveFF(input Entity) error {
-	featuresFlags, err := fr.GetAllFF()
+func (fr Repository) SaveFF(ctx context.Context, input Entity) error {
+	featuresFlags, err := fr.GetAllFF(ctx)
 	if err != nil {
 		return err
 	}
@@ -29,7 +30,7 @@ func (fr Repository) SaveFF(input Entity) error {
 	return os.WriteFile(env.FilePath, b, 0644)
 }
 
-func (fr Repository) GetFF(key string) (Entity, error) {
+func (fr Repository) GetFF(ctx context.Context, key string) (Entity, error) {
 	b, err := os.ReadFile(env.FilePath)
 	if err != nil {
 		return Entity{}, err
@@ -51,7 +52,7 @@ func (fr Repository) GetFF(key string) (Entity, error) {
 	return Entity{}, errorutils.NewNotFoundError("featureflag")
 }
 
-func (fr Repository) GetAllFF() (map[string]Entity, error) {
+func (fr Repository) GetAllFF(ctx context.Context) (map[string]Entity, error) {
 	b, err := os.ReadFile(env.FilePath)
 	if err != nil {
 		return map[string]Entity{}, err
@@ -69,8 +70,8 @@ func (fr Repository) GetAllFF() (map[string]Entity, error) {
 	return ff, nil
 }
 
-func (fr Repository) DeleteFF(key string) error {
-	featuresflags, err := fr.GetAllFF()
+func (fr Repository) DeleteFF(ctx context.Context, key string) error {
+	featuresflags, err := fr.GetAllFF(ctx)
 	if err != nil {
 		return err
 	}

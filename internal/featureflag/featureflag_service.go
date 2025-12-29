@@ -22,15 +22,14 @@ func NewFeatureflagService(repository Adapter, pub Publisher) *Service {
 }
 
 func (ff Service) CreateOrUpdate(ctx context.Context, featureflag Entity) error {
-	flag, err := ff.repository.GetFF(featureflag.FlagName)
+	flag, err := ff.repository.GetFF(ctx, featureflag.FlagName)
 
 	if err != nil {
 		switch err.(type) {
 		case *errorutils.NotFoundError:
-			if err := ff.repository.SaveFF(featureflag); err != nil {
+			if err := ff.repository.SaveFF(ctx, featureflag); err != nil {
 				return err
 			}
-			break
 		default:
 			return err
 		}
@@ -40,33 +39,33 @@ func (ff Service) CreateOrUpdate(ctx context.Context, featureflag Entity) error 
 
 	flag.Active = featureflag.Active
 
-	if err := ff.repository.SaveFF(flag); err != nil {
+	if err := ff.repository.SaveFF(ctx, flag); err != nil {
 		return fmt.Errorf("error on save in repository: %w", err)
 	}
 
-	if ff.pub.Publish(ctx, "featureflag", pubsub.NewPayload(flag)); err != nil {
+	if err := ff.pub.Publish(ctx, "featureflag", pubsub.NewPayload(flag)); err != nil {
 		return fmt.Errorf("error on publisher event writer feature flag: %w", err)
 	}
 
 	return nil
 }
 
-func (ff Service) RemoveFeatureFlag(key string) error {
-	return ff.repository.DeleteFF(key)
+func (ff Service) RemoveFeatureFlag(ctx context.Context, key string) error {
+	return ff.repository.DeleteFF(ctx, key)
 }
 
-func (ff Service) GetAllFeatureFlag() (map[string]Entity, error) {
-	return ff.repository.GetAllFF()
+func (ff Service) GetAllFeatureFlag(ctx context.Context) (map[string]Entity, error) {
+	return ff.repository.GetAllFF(ctx)
 }
 
-func (ff Service) GetFeatureFlag(key string, sessionID string) (Entity, error) {
-	featureflag, err := ff.repository.GetFF(key)
+func (ff Service) GetFeatureFlag(ctx context.Context, key string, sessionID string) (Entity, error) {
+	featureflag, err := ff.repository.GetFF(ctx, key)
 	if err != nil {
 		return Entity{}, err
 	}
 
 	if featureflag.IsUseStrategy() {
-		if err := ff.repository.SaveFF(featureflag.SetStrategy(sessionID).SetQtdCall()); err != nil {
+		if err := ff.repository.SaveFF(ctx, featureflag.SetStrategy(sessionID).SetQtdCall()); err != nil {
 			return Entity{}, err
 		}
 	}
@@ -74,14 +73,14 @@ func (ff Service) GetFeatureFlag(key string, sessionID string) (Entity, error) {
 	return featureflag, nil
 }
 
-func (ff Service) GetFeatureFlagBySDK(key string, sessionID string) (bool, error) {
-	featureflag, err := ff.repository.GetFF(key)
+func (ff Service) GetFeatureFlagBySDK(ctx context.Context, key string, sessionID string) (bool, error) {
+	featureflag, err := ff.repository.GetFF(ctx, key)
 	if err != nil {
 		return false, err
 	}
 
 	if featureflag.IsUseStrategy() {
-		if err := ff.repository.SaveFF(featureflag.SetStrategy(sessionID).SetQtdCall()); err != nil {
+		if err := ff.repository.SaveFF(ctx, featureflag.SetStrategy(sessionID).SetQtdCall()); err != nil {
 			return false, err
 		}
 

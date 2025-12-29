@@ -1,6 +1,7 @@
 package contenthub
 
 import (
+	"context"
 	"testing"
 
 	"github.com/IsaacDSC/featureflag/pkg/testrepository"
@@ -40,15 +41,16 @@ func TestContentHubRepository(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
+			ctx := context.Background()
 			// Act
-			err := repo.SaveContentHub(tc.Contenthub)
+			err := repo.SaveContentHub(ctx, tc.Contenthub)
 
 			// Assert
 			if err != nil {
 				t.Errorf("SaveContentHub() error = %v, wantErr %v", err, false)
 			}
 
-			results, err := repo.GetAllContentHub()
+			results, err := repo.GetAllContentHub(ctx)
 			_, ok := results[tc.Contenthub.Variable]
 			if !ok {
 				t.Errorf("Not found contenthub with key: %s", tc.Contenthub.Variable)

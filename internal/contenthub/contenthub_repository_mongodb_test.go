@@ -86,13 +86,13 @@ func TestMongoDBRepository_SaveContentHub(t *testing.T) {
 		},
 	}
 
-	err = repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(context.Background(), entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub falhou: %v", err)
 	}
 
 	// Verificar se foi salvo
-	saved, err := repo.GetContentHub("test-variable")
+	saved, err := repo.GetContentHub(context.Background(), "test-variable")
 	if err != nil {
 		t.Fatalf("GetContentHub falhou após SaveContentHub: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestMongoDBRepository_SaveContentHub_Update(t *testing.T) {
 	}
 
 	// Salvar primeira vez
-	err = repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(context.Background(), entity)
 	if err != nil {
 		t.Fatalf("Primeira SaveContentHub falhou: %v", err)
 	}
@@ -140,13 +140,13 @@ func TestMongoDBRepository_SaveContentHub_Update(t *testing.T) {
 	// Atualizar
 	entity.Value = "updated-value"
 	entity.Active = true
-	err = repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(context.Background(), entity)
 	if err != nil {
 		t.Fatalf("Segunda SaveContentHub (update) falhou: %v", err)
 	}
 
 	// Verificar atualização
-	updated, err := repo.GetContentHub("update-variable")
+	updated, err := repo.GetContentHub(context.Background(), "update-variable")
 	if err != nil {
 		t.Fatalf("GetContentHub falhou: %v", err)
 	}
@@ -181,13 +181,13 @@ func TestMongoDBRepository_GetContentHub(t *testing.T) {
 		CreatedAt:   time.Now(),
 	}
 
-	err = repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(context.Background(), entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub falhou: %v", err)
 	}
 
 	// Buscar existente
-	found, err := repo.GetContentHub("get-variable")
+	found, err := repo.GetContentHub(context.Background(), "get-variable")
 	if err != nil {
 		t.Fatalf("GetContentHub falhou: %v", err)
 	}
@@ -214,7 +214,7 @@ func TestMongoDBRepository_GetContentHub_NotFound(t *testing.T) {
 	}
 
 	// Tentar buscar variable inexistente
-	_, err = repo.GetContentHub("non-existent")
+	_, err = repo.GetContentHub(context.Background(), "non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao buscar variable inexistente, obteve nil")
 	}
@@ -268,14 +268,14 @@ func TestMongoDBRepository_GetAllContentHub(t *testing.T) {
 	}
 
 	for _, entity := range entities {
-		err := repo.SaveContentHub(entity)
+		err := repo.SaveContentHub(context.Background(), entity)
 		if err != nil {
 			t.Fatalf("SaveContentHub falhou para %s: %v", entity.Variable, err)
 		}
 	}
 
 	// Buscar todas
-	all, err := repo.GetAllContentHub()
+	all, err := repo.GetAllContentHub(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllContentHub falhou: %v", err)
 	}
@@ -305,7 +305,7 @@ func TestMongoDBRepository_GetAllContentHub_Empty(t *testing.T) {
 	}
 
 	// Buscar em coleção vazia
-	all, err := repo.GetAllContentHub()
+	all, err := repo.GetAllContentHub(context.Background())
 	if err != nil {
 		t.Fatalf("GetAllContentHub falhou em coleção vazia: %v", err)
 	}
@@ -337,19 +337,19 @@ func TestMongoDBRepository_DeleteContentHub(t *testing.T) {
 	}
 
 	// Salvar
-	err = repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(context.Background(), entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub falhou: %v", err)
 	}
 
 	// Deletar
-	err = repo.DeleteContentHub("delete-variable")
+	err = repo.DeleteContentHub(context.Background(), "delete-variable")
 	if err != nil {
 		t.Fatalf("DeleteContentHub falhou: %v", err)
 	}
 
 	// Verificar se foi deletado
-	_, err = repo.GetContentHub("delete-variable")
+	_, err = repo.GetContentHub(context.Background(), "delete-variable")
 	if err == nil {
 		t.Fatal("Esperado erro ao buscar variable deletada, obteve nil")
 	}
@@ -368,7 +368,7 @@ func TestMongoDBRepository_DeleteContentHub_NotFound(t *testing.T) {
 	}
 
 	// Tentar deletar variable inexistente
-	err = repo.DeleteContentHub("non-existent")
+	err = repo.DeleteContentHub(context.Background(), "non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao deletar variable inexistente, obteve nil")
 	}
@@ -417,7 +417,7 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 				CreatedAt:   time.Now(),
 			}
 
-			if err := repo.SaveContentHub(entity); err != nil {
+			if err := repo.SaveContentHub(context.Background(), entity); err != nil {
 				errors <- err
 			}
 			done <- true
@@ -436,7 +436,7 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 	}
 
 	// Verificar se a variable existe (deve ter sido salva pelo menos uma vez)
-	_, err = repo.GetContentHub("concurrent-variable")
+	_, err = repo.GetContentHub(context.Background(), "concurrent-variable")
 	if err != nil {
 		t.Fatalf("GetContentHub falhou após operações concurrent: %v", err)
 	}
@@ -472,13 +472,13 @@ func TestMongoDBRepository_WithStrategies(t *testing.T) {
 		},
 	}
 
-	err = repo.SaveContentHub(entity)
+	err = repo.SaveContentHub(context.Background(), entity)
 	if err != nil {
 		t.Fatalf("SaveContentHub com strategies falhou: %v", err)
 	}
 
 	// Verificar se as strategies foram salvas corretamente
-	saved, err := repo.GetContentHub("strategy-variable")
+	saved, err := repo.GetContentHub(context.Background(), "strategy-variable")
 	if err != nil {
 		t.Fatalf("GetContentHub falhou: %v", err)
 	}
@@ -531,7 +531,7 @@ func BenchmarkMongoDBRepository_SaveContentHub(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = repo.SaveContentHub(entity)
+		_ = repo.SaveContentHub(context.Background(), entity)
 	}
 }
 
@@ -572,10 +572,10 @@ func BenchmarkMongoDBRepository_GetContentHub(b *testing.B) {
 		CreatedAt:   time.Now(),
 	}
 
-	_ = repo.SaveContentHub(entity)
+	_ = repo.SaveContentHub(context.Background(), entity)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = repo.GetContentHub("bench-variable")
+		_, _ = repo.GetContentHub(context.Background(), "bench-variable")
 	}
 }

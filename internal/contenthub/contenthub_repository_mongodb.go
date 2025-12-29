@@ -35,8 +35,8 @@ func NewMongoDBContentHubRepository(database *mongo.Database) (*MongoDBRepositor
 	}, nil
 }
 
-func (mr *MongoDBRepository) SaveContentHub(input Entity) error {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) SaveContentHub(ctx context.Context, input Entity) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	filter := bson.M{keyIndexModel.String(): input.Variable}
@@ -62,8 +62,8 @@ func (mr *MongoDBRepository) SaveContentHub(input Entity) error {
 	return nil
 }
 
-func (mr *MongoDBRepository) GetContentHub(key string) (Entity, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) GetContentHub(ctx context.Context, key string) (Entity, error) {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	filter := bson.M{keyIndexModel.String(): key}
@@ -80,8 +80,8 @@ func (mr *MongoDBRepository) GetContentHub(key string) (Entity, error) {
 	return entity, nil
 }
 
-func (mr *MongoDBRepository) GetAllContentHub() (map[string]Entity, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) GetAllContentHub(ctx context.Context) (map[string]Entity, error) {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	cursor, err := mr.collection.Find(ctx, bson.M{})
@@ -106,8 +106,8 @@ func (mr *MongoDBRepository) GetAllContentHub() (map[string]Entity, error) {
 	return result, nil
 }
 
-func (mr *MongoDBRepository) DeleteContentHub(key string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) DeleteContentHub(ctx context.Context, key string) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	filter := bson.M{"key": key}

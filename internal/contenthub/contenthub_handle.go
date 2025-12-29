@@ -58,13 +58,14 @@ func (h ContenthubHandler) patchContenthub(w http.ResponseWriter, r *http.Reques
 }
 
 func (h ContenthubHandler) getContentHub(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	key := r.URL.Query().Get("key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	content, err := h.service.GetContentHub(key)
+	content, err := h.service.GetContentHub(ctx, key)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -78,7 +79,8 @@ func (h ContenthubHandler) getContentHub(w http.ResponseWriter, r *http.Request)
 }
 
 func (h ContenthubHandler) getAllContenthub(w http.ResponseWriter, r *http.Request) {
-	contents, err := h.service.GetAllContentHub()
+	ctx := r.Context()
+	contents, err := h.service.GetAllContentHub(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -97,13 +99,14 @@ func (h ContenthubHandler) getAllContenthub(w http.ResponseWriter, r *http.Reque
 }
 
 func (h ContenthubHandler) deleteContenthub(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	key := r.URL.Query().Get("key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.RemoveContentHub(key); err != nil {
+	if err := h.service.RemoveContentHub(ctx, key); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -114,13 +117,14 @@ func (h ContenthubHandler) deleteContenthub(w http.ResponseWriter, r *http.Reque
 
 // TODO: validate and implement this method correctly
 func (h ContenthubHandler) getContentHubBySDK(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	key := r.PathValue("key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	content, err := h.service.GetContentHub(key)
+	content, err := h.service.GetContentHub(ctx, key)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return

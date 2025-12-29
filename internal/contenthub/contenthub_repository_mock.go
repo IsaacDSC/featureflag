@@ -5,6 +5,7 @@
 package contenthub
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -34,59 +35,59 @@ func (m *MockContentHubRepository) EXPECT() *MockContentHubRepositoryMockRecorde
 }
 
 // DeleteContentHub mocks base method.
-func (m *MockContentHubRepository) DeleteContentHub(key string) error {
+func (m *MockContentHubRepository) DeleteContentHub(ctx context.Context, key string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteContentHub", key)
+	ret := m.ctrl.Call(m, "DeleteContentHub", ctx, key)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteContentHub indicates an expected call of DeleteContentHub.
-func (mr *MockContentHubRepositoryMockRecorder) DeleteContentHub(key interface{}) *gomock.Call {
+func (mr *MockContentHubRepositoryMockRecorder) DeleteContentHub(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).DeleteContentHub), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).DeleteContentHub), ctx, key)
 }
 
 // GetAllContentHub mocks base method.
-func (m *MockContentHubRepository) GetAllContentHub() (map[string]Entity, error) {
+func (m *MockContentHubRepository) GetAllContentHub(ctx context.Context) (map[string]Entity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllContentHub")
+	ret := m.ctrl.Call(m, "GetAllContentHub", ctx)
 	ret0, _ := ret[0].(map[string]Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllContentHub indicates an expected call of GetAllContentHub.
-func (mr *MockContentHubRepositoryMockRecorder) GetAllContentHub() *gomock.Call {
+func (mr *MockContentHubRepositoryMockRecorder) GetAllContentHub(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).GetAllContentHub))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).GetAllContentHub), ctx)
 }
 
 // GetContentHub mocks base method.
-func (m *MockContentHubRepository) GetContentHub(key string) (Entity, error) {
+func (m *MockContentHubRepository) GetContentHub(ctx context.Context, key string) (Entity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetContentHub", key)
+	ret := m.ctrl.Call(m, "GetContentHub", ctx, key)
 	ret0, _ := ret[0].(Entity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetContentHub indicates an expected call of GetContentHub.
-func (mr *MockContentHubRepositoryMockRecorder) GetContentHub(key interface{}) *gomock.Call {
+func (mr *MockContentHubRepositoryMockRecorder) GetContentHub(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).GetContentHub), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).GetContentHub), ctx, key)
 }
 
 // SaveContentHub mocks base method.
-func (m *MockContentHubRepository) SaveContentHub(input Entity) error {
+func (m *MockContentHubRepository) SaveContentHub(ctx context.Context, input Entity) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveContentHub", input)
+	ret := m.ctrl.Call(m, "SaveContentHub", ctx, input)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SaveContentHub indicates an expected call of SaveContentHub.
-func (mr *MockContentHubRepositoryMockRecorder) SaveContentHub(input interface{}) *gomock.Call {
+func (mr *MockContentHubRepositoryMockRecorder) SaveContentHub(ctx, input interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).SaveContentHub), input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContentHub", reflect.TypeOf((*MockContentHubRepository)(nil).SaveContentHub), ctx, input)
 }

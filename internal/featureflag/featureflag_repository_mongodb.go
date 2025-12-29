@@ -36,8 +36,8 @@ func NewMongoDBFeatureFlagRepository(database *mongo.Database) (*MongoDBReposito
 	}, nil
 }
 
-func (mr *MongoDBRepository) SaveFF(input Entity) error {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) SaveFF(ctx context.Context, input Entity) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	filter := bson.M{flagNameIndexModel.String(): input.FlagName}
@@ -60,8 +60,8 @@ func (mr *MongoDBRepository) SaveFF(input Entity) error {
 	return nil
 }
 
-func (mr *MongoDBRepository) GetFF(key string) (Entity, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) GetFF(ctx context.Context, key string) (Entity, error) {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	filter := bson.M{flagNameIndexModel.String(): key}
@@ -78,8 +78,8 @@ func (mr *MongoDBRepository) GetFF(key string) (Entity, error) {
 	return entity, nil
 }
 
-func (mr *MongoDBRepository) GetAllFF() (map[string]Entity, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) GetAllFF(ctx context.Context) (map[string]Entity, error) {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	cursor, err := mr.collection.Find(ctx, bson.M{})
@@ -104,8 +104,8 @@ func (mr *MongoDBRepository) GetAllFF() (map[string]Entity, error) {
 	return result, nil
 }
 
-func (mr *MongoDBRepository) DeleteFF(key string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), mr.timeout)
+func (mr *MongoDBRepository) DeleteFF(ctx context.Context, key string) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
 	filter := bson.M{flagNameIndexModel.String(): key}

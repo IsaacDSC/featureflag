@@ -22,12 +22,12 @@ func NewContentHubService(repository Adapter, pub Publisher) *Service {
 }
 
 func (ch Service) CreateOrUpdate(ctx context.Context, contenthub Entity) error {
-	data, err := ch.repository.GetContentHub(contenthub.Variable)
+	data, err := ch.repository.GetContentHub(ctx, contenthub.Variable)
 
 	if err != nil {
 		switch err.(type) {
 		case *errorutils.NotFoundError:
-			if err := ch.repository.SaveContentHub(contenthub); err != nil {
+			if err := ch.repository.SaveContentHub(ctx, contenthub); err != nil {
 				return err
 			}
 			return nil
@@ -38,7 +38,7 @@ func (ch Service) CreateOrUpdate(ctx context.Context, contenthub Entity) error {
 
 	data.Active = contenthub.Active
 
-	if err := ch.repository.SaveContentHub(data); err != nil {
+	if err := ch.repository.SaveContentHub(ctx, data); err != nil {
 		return fmt.Errorf("error on save contenthub: %w", err)
 	}
 
@@ -49,16 +49,16 @@ func (ch Service) CreateOrUpdate(ctx context.Context, contenthub Entity) error {
 	return nil
 }
 
-func (ch Service) RemoveContentHub(key string) error {
-	return ch.repository.DeleteContentHub(key)
+func (ch Service) RemoveContentHub(ctx context.Context, key string) error {
+	return ch.repository.DeleteContentHub(ctx, key)
 }
 
-func (ch Service) GetAllContentHub() (map[string]Entity, error) {
-	return ch.repository.GetAllContentHub()
+func (ch Service) GetAllContentHub(ctx context.Context) (map[string]Entity, error) {
+	return ch.repository.GetAllContentHub(ctx)
 }
 
-func (ch Service) GetContentHub(key string) (Entity, error) {
-	contenthub, err := ch.repository.GetContentHub(key)
+func (ch Service) GetContentHub(ctx context.Context, key string) (Entity, error) {
+	contenthub, err := ch.repository.GetContentHub(ctx, key)
 	if err != nil {
 		return contenthub, err
 	}
