@@ -10,12 +10,17 @@ import (
 )
 
 type Dto struct {
+	Project    string               `json:"project"`
 	FlagName   string               `json:"flag_name"`
 	Active     bool                 `json:"active"`
 	Strategies strategy.StrategyDto `json:"strategy,omitempty"`
 }
 
-func ToDomain(input Dto) (Entity, error) {
+func ToDomain(project string, input Dto) (Entity, error) {
+	if err := ValidateProject(project); err != nil {
+		return Entity{}, err
+	}
+
 	if strings.TrimSpace(input.FlagName) == "" {
 		return Entity{}, errors.New("flag name is required")
 	}
@@ -27,6 +32,7 @@ func ToDomain(input Dto) (Entity, error) {
 
 	return Entity{
 		ID:         uuid.New(),
+		Project:    project,
 		FlagName:   input.FlagName,
 		Strategies: strategy,
 		Active:     input.Active,
@@ -36,6 +42,7 @@ func ToDomain(input Dto) (Entity, error) {
 
 func DtoFromDomain(ff Entity) Dto {
 	return Dto{
+		Project:    ff.Project,
 		FlagName:   ff.FlagName,
 		Active:     ff.Active,
 		Strategies: strategy.StrategyFromDomain(ff.Strategies),

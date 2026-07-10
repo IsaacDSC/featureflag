@@ -22,7 +22,7 @@ func NewSdkNotifyHandler(sub Subscriber) *SdkNotifyHandler {
 	h := new(SdkNotifyHandler)
 	h.sub = sub
 	h.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		"GET /events/{resource}": h.event,
+		"GET /events/{resource}/{project}": h.event,
 	}
 
 	return h
@@ -43,8 +43,15 @@ func (h SdkNotifyHandler) event(w http.ResponseWriter, r *http.Request) {
 		resource = "default"
 	}
 
+	// Isolamento por project: cada cliente assina apenas o canal do seu contexto,
+	// ex.: events.fanout.featureflag.<project>.
+	project := r.PathValue("project")
+	if project != "" {
+		resource = fmt.Sprintf("%s.%s", resource, project)
+	}
+
 	l := ctxlog.GetLogger(ctx)
-	l.Debug("connected sse", "resource", resource)
+	l.Debug("connected sse", "resource", resource, "project", project)
 
 	h.sub.Listener(ctx, resource, func(ctx context.Context, msg pubsub.Msg) error {
 		// var body Msg

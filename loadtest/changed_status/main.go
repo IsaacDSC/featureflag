@@ -84,7 +84,7 @@ func main() {
 	// 3. Inicializar SDK e Listener
 	fmt.Println("🚀 Inicializando SDK e Listener...")
 	ctx := context.Background()
-	ff := featureflag.NewFeatureFlagSDK(serverURL)
+	ff := featureflag.NewFeatureFlagSDK(serverURL, "loadtest")
 
 	go func() {
 		_, err := ff.Listenner(ctx)
@@ -423,7 +423,7 @@ func createFeatureFlag(serverURL string, payload FeatureFlagPayload) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PATCH", serverURL+"/featureflag", bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", serverURL+"/featureflag/loadtest", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}

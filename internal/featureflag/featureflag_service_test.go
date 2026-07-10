@@ -40,9 +40,9 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 			},
 			args: args{
 				behavior: func(ff Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), gomock.Any()).Return(ff, nil)
-					repository.EXPECT().SaveFF(gomock.Any(), ff).Return(nil)
-					publisher.EXPECT().Publish(gomock.Any(), "featureflag", gomock.Any()).Return(nil)
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), gomock.Any()).Return(ff, nil)
+					repository.EXPECT().SaveFF(gomock.Any(), gomock.Any(), ff).Return(nil)
+					publisher.EXPECT().Publish(gomock.Any(), "featureflag.proj-a", gomock.Any()).Return(nil)
 				},
 				featureflag: Entity{
 					ID:         uuid.New(),
@@ -61,8 +61,9 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 			},
 			args: args{
 				behavior: func(ff Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), gomock.Any()).Return(Entity{}, errorutils.NewNotFoundError("featureflag"))
-					repository.EXPECT().SaveFF(gomock.Any(), ff).Return(nil)
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), gomock.Any()).Return(Entity{}, errorutils.NewNotFoundError("featureflag"))
+					repository.EXPECT().SaveFF(gomock.Any(), gomock.Any(), ff).Return(nil)
+					publisher.EXPECT().Publish(gomock.Any(), "featureflag.proj-a", gomock.Any()).Return(nil)
 				},
 				featureflag: Entity{
 					ID:       uuid.New(),
@@ -84,7 +85,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 			},
 			args: args{
 				behavior: func(ff Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), gomock.Any()).Return(Entity{}, errors.New("error read file"))
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), gomock.Any()).Return(Entity{}, errors.New("error read file"))
 				},
 				featureflag: Entity{
 					ID:       uuid.New(),
@@ -107,7 +108,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 				pub:        publisher,
 			}
 			tt.args.behavior(tt.args.featureflag)
-			if err := repo.CreateOrUpdate(context.Background(), tt.args.featureflag); (err != nil) != tt.wantErr {
+			if err := repo.CreateOrUpdate(context.Background(), "proj-a", tt.args.featureflag); (err != nil) != tt.wantErr {
 				t.Errorf("CreateOrUpdate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -144,7 +145,7 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 				key:       "teste1",
 				sessionID: "",
 				behavior: func(key string, sessionID string, featureflag Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), key).Return(featureflag, nil)
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), key).Return(featureflag, nil)
 				},
 			},
 			want: Entity{
@@ -165,10 +166,10 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 				key:       "teste2",
 				sessionID: "",
 				behavior: func(key string, sessionID string, featureflag Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), key).Return(featureflag, nil)
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), key).Return(featureflag, nil)
 					featureflag.Strategies.QtdCall += 1
 					featureflag.Active = false
-					repository.EXPECT().SaveFF(gomock.Any(), featureflag).Return(nil)
+					repository.EXPECT().SaveFF(gomock.Any(), gomock.Any(), featureflag).Return(nil)
 				},
 			},
 			want: Entity{
@@ -192,9 +193,9 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 				key:       "teste2",
 				sessionID: "01J2BQ9Y19SHS6F6PMZQCH9Z70",
 				behavior: func(key string, sessionID string, featureflag Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), key).Return(featureflag, nil)
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), key).Return(featureflag, nil)
 					featureflag.Strategies.QtdCall += 1
-					repository.EXPECT().SaveFF(gomock.Any(), featureflag).Return(nil)
+					repository.EXPECT().SaveFF(gomock.Any(), gomock.Any(), featureflag).Return(nil)
 				},
 			},
 			want: Entity{
@@ -218,7 +219,7 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 				key:       "teste2",
 				sessionID: "01J2BQ9Y19SHS6F6PMZQCH9Z70",
 				behavior: func(key string, sessionID string, featureflag Entity) {
-					repository.EXPECT().GetFF(gomock.Any(), key).Return(featureflag, errors.New("os read file error"))
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), key).Return(featureflag, errors.New("os read file error"))
 				},
 			},
 			want:    Entity{},
@@ -243,9 +244,9 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 						Active:    true,
 						CreatedAt: time.Now(),
 					}
-					repository.EXPECT().GetFF(gomock.Any(), key).Return(ff, nil)
+					repository.EXPECT().GetFF(gomock.Any(), gomock.Any(), key).Return(ff, nil)
 					ff.Strategies.QtdCall += 1
-					repository.EXPECT().SaveFF(gomock.Any(), ff).Return(errors.New("os write error file"))
+					repository.EXPECT().SaveFF(gomock.Any(), gomock.Any(), ff).Return(errors.New("os write error file"))
 				},
 			},
 			want:    Entity{},
@@ -261,7 +262,7 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 
 			tt.args.behavior(tt.args.key, tt.args.sessionID, tt.want)
 
-			got, err := ff.GetFeatureFlag(context.Background(), tt.args.key, tt.args.sessionID)
+			got, err := ff.GetFeatureFlag(context.Background(), "proj-a", tt.args.key, tt.args.sessionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetFeatureFlag() error = %v, wantErr %v", err, tt.wantErr)
 				return

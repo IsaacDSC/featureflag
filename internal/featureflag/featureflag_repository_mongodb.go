@@ -19,13 +19,14 @@ type MongoDBRepository struct {
 
 const (
 	collectionName     = mongodb.CollectionName("featureflags")
+	projectIndexModel  = mongodb.IndexModel("project")
 	flagNameIndexModel = mongodb.IndexModel("flag_name")
 )
 
 func NewMongoDBFeatureFlagRepository(database *mongo.Database) (*MongoDBRepository, error) {
 	collection := database.Collection(collectionName.String())
 
-	err := mongodb.CreateUniqueIndex(collection, flagNameIndexModel)
+	err := mongodb.CreateUniqueCompoundIndex(collection, projectIndexModel, flagNameIndexModel)
 	if err != nil {
 		return nil, fmt.Errorf("error on create index: %w", err)
 	}
@@ -36,18 +37,19 @@ func NewMongoDBFeatureFlagRepository(database *mongo.Database) (*MongoDBReposito
 	}, nil
 }
 
-func (mr *MongoDBRepository) SaveFF(ctx context.Context, input Entity) error {
+func (mr *MongoDBRepository) SaveFF(ctx context.Context, project string, input Entity) error {
 	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
-	filter := bson.M{flagNameIndexModel.String(): input.FlagName}
+	filter := bson.M{projectIndexModel.String(): project, flagNameIndexModel.String(): input.FlagName}
 	update := bson.M{
 		"$set": bson.M{
-			id:         input.ID,
-			flagName:   input.FlagName,
-			strategies: input.Strategies,
-			active:     input.Active,
-			createdAt:  input.CreatedAt,
+			id:                         input.ID,
+			projectIndexModel.String(): project,
+			flagName:                   input.FlagName,
+			strategies:                 input.Strategies,
+			active:                     input.Active,
+			createdAt:                  input.CreatedAt,
 		},
 	}
 
@@ -60,11 +62,11 @@ func (mr *MongoDBRepository) SaveFF(ctx context.Context, input Entity) error {
 	return nil
 }
 
-func (mr *MongoDBRepository) GetFF(ctx context.Context, key string) (Entity, error) {
+func (mr *MongoDBRepository) GetFF(ctx context.Context, project, key string) (Entity, error) {
 	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
-	filter := bson.M{flagNameIndexModel.String(): key}
+	filter := bson.M{projectIndexModel.String(): project, flagNameIndexModel.String(): key}
 	var entity Entity
 
 	err := mr.collection.FindOne(ctx, filter).Decode(&entity)
@@ -78,11 +80,11 @@ func (mr *MongoDBRepository) GetFF(ctx context.Context, key string) (Entity, err
 	return entity, nil
 }
 
-func (mr *MongoDBRepository) GetAllFF(ctx context.Context) (map[string]Entity, error) {
+func (mr *MongoDBRepository) GetAllFF(ctx context.Context, project string) (map[string]Entity, error) {
 	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
-	cursor, err := mr.collection.Find(ctx, bson.M{})
+	cursor, err := mr.collection.Find(ctx, bson.M{projectIndexModel.String(): project})
 	if err != nil {
 		return map[string]Entity{}, err
 	}
@@ -104,11 +106,11 @@ func (mr *MongoDBRepository) GetAllFF(ctx context.Context) (map[string]Entity, e
 	return result, nil
 }
 
-func (mr *MongoDBRepository) DeleteFF(ctx context.Context, key string) error {
+func (mr *MongoDBRepository) DeleteFF(ctx context.Context, project, key string) error {
 	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
 	defer cancel()
 
-	filter := bson.M{flagNameIndexModel.String(): key}
+	filter := bson.M{projectIndexModel.String(): project, flagNameIndexModel.String(): key}
 	result, err := mr.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err

@@ -31,7 +31,7 @@ func TestNewFeatureFlagSDK(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sdk := NewFeatureFlagSDK(tt.hostFF)
+			sdk := NewFeatureFlagSDK(tt.hostFF, "proj-a")
 
 			if sdk == nil {
 				t.Fatal("NewFeatureFlagSDK() returned nil")
@@ -39,6 +39,10 @@ func TestNewFeatureFlagSDK(t *testing.T) {
 
 			if sdk.host != tt.hostFF {
 				t.Errorf("host = %v, want %v", sdk.host, tt.hostFF)
+			}
+
+			if sdk.project != "proj-a" {
+				t.Errorf("project = %v, want %v", sdk.project, "proj-a")
 			}
 
 			if sdk.client == nil {
@@ -570,8 +574,8 @@ func TestFeatureFlagSDK_getAllFlags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create test server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path != "/featureflags" {
-					t.Errorf("Expected path '/featureflags', got %s", r.URL.Path)
+				if r.URL.Path != "/featureflag/proj-a/all" {
+					t.Errorf("Expected path '/featureflag/proj-a/all', got %s", r.URL.Path)
 				}
 
 				w.WriteHeader(tt.serverStatus)
@@ -580,8 +584,9 @@ func TestFeatureFlagSDK_getAllFlags(t *testing.T) {
 			defer server.Close()
 
 			sdk := FeatureFlagSDK{
-				host:   server.URL,
-				client: &http.Client{},
+				host:    server.URL,
+				project: "proj-a",
+				client:  &http.Client{},
 			}
 
 			ctx := context.Background()

@@ -1,14 +1,20 @@
+# Auth: o header Authorization recebe o valor CRU do token.
+#   service -> SERVICE_CLIENT  (SERVICE_CLIENT_AT, default "service")
+#   sdk     -> SDK_CLIENT      (SDK_CLIENT_AT, default "sdk")
+# Rotas protegidas: GET /{key}, GET /sdk/{key} e DELETE /{key}.
+# PATCH e GET /all não passam por Authorization no momento.
+
 ### Authentication service
 POST {{host}}/auth
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Authorization: service
 ###
 
 
-###
-PATCH  {{host}}/featureflag
+### Cria/atualiza flag no project "checkout"
+PATCH  {{host}}/featureflag/checkout
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Authorization: service
 Cookie: {{cookie}}
 
 {
@@ -17,27 +23,27 @@ Cookie: {{cookie}}
 }
 
 
-###
-PATCH {{host}}/featureflag
+### Mesma flag em outro project "billing" (isolada da anterior)
+PATCH {{host}}/featureflag/billing
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Authorization: service
 Cookie: {{cookie}}
 
 {
-  "flag_name": "teste2",
-  "active": true,
+  "flag_name": "teste1",
+  "active": false,
   "strategy": {
     "percent": 50
   }
 }
 
 
-###
-PATCH {{host}}/featureflag
+### Cria flag com strategy de sessão no project "checkout"
+PATCH {{host}}/featureflag/checkout
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+Authorization: service
 
 {
   "flag_name": "teste99",
@@ -48,25 +54,34 @@ Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
 }
 
 
-###
-GET {{host}}/featureflag
+### Lista todas as flags do project "checkout"
+GET {{host}}/featureflag/checkout/all
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
 
 
-###
-GET {{host}}/featureflag/teste3
+### Busca flag específica dentro do project (requer SERVICE_CLIENT)
+GET {{host}}/featureflag/checkout/teste3
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
-Cookie: {{cookie}}
+Authorization: service
 session_id: 34eec623-c9f2-494e-bf66-57a85139fd69
 
 
-###
-DELETE {{host}}/featureflag/teste99
+### Leitura via SDK (requer SDK_CLIENT)
+GET {{host}}/featureflag/checkout/sdk/teste1
+Accept: application/json
+Authorization: sdk
+session_id: 34eec623-c9f2-494e-bf66-57a85139fd69
+
+
+### Remove flag do project (requer SERVICE_CLIENT)
+DELETE {{host}}/featureflag/checkout/teste99
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
-Cookie: {{cookie}}
+Authorization: service
+
+
+### Stream SSE por project (events.fanout.featureflag.checkout)
+GET {{host}}/events/featureflag/checkout
+Accept: text/event-stream

@@ -168,7 +168,7 @@ func TestToDomain(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ToDomain(tt.input)
+			got, err := ToDomain("proj-a", tt.input)
 
 			if tt.wantErr {
 				if err == nil {

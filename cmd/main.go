@@ -23,10 +23,15 @@ var rdb *redis.Client
 
 func init() {
 	env.Init()
-	for i := range env.FilesPaths {
-		if _, err := os.ReadFile(env.FilesPaths[i]); err != nil {
-			if _, err := os.Create(env.FilesPaths[i]); err != nil {
-				log.Fatal(err)
+	// Os arquivos JSON só são usados pelo repositório jsonfile; evitamos
+	// criá-los (e falhar caso o caminho seja um diretório) quando o backend
+	// for MongoDB.
+	if env.Get().RepositoryType == "jsonfile" {
+		for i := range env.FilesPaths {
+			if _, err := os.ReadFile(env.FilesPaths[i]); err != nil {
+				if _, err := os.Create(env.FilesPaths[i]); err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}
