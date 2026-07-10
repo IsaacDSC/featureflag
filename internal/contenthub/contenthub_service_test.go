@@ -13,7 +13,6 @@ import (
 func TestContentHubService_CreateOrUpdate(t *testing.T) {
 	control := gomock.NewController(t)
 	repository := NewMockContentHubRepository(control)
-	publisher := NewMockPublisher(control)
 
 	tests := []struct {
 		name       string
@@ -43,7 +42,6 @@ func TestContentHubService_CreateOrUpdate(t *testing.T) {
 				repository.EXPECT().GetContentHub(gomock.Any(), contenthub.Variable).Return(existing, nil)
 				existing.Active = contenthub.Active
 				repository.EXPECT().SaveContentHub(gomock.Any(), existing).Return(nil)
-				publisher.EXPECT().Publish(gomock.Any(), "contenthub", gomock.Any()).Return(nil)
 			},
 			contenthub: Entity{
 				Variable: "test1",
@@ -68,7 +66,6 @@ func TestContentHubService_CreateOrUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ch := Service{
 				repository: repository,
-				pub:        publisher,
 			}
 			tt.behavior(tt.contenthub)
 			if err := ch.CreateOrUpdate(context.Background(), tt.contenthub); (err != nil) != tt.wantErr {

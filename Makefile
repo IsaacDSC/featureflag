@@ -27,13 +27,13 @@ test: ## Roda a suíte de testes com o race detector
 tidy: ## Ajusta o go.mod/go.sum
 	go mod tidy
 
-infra-up: ## Sobe apenas as dependências (Redis + MongoDB)
-	docker-compose up -d redis mongodb
+infra-up: ## Sobe apenas as dependências (MongoDB)
+	docker-compose up -d mongodb
 
 infra-down: ## Derruba as dependências
-	docker-compose stop redis mongodb
+	docker-compose stop mongodb
 
-docker-up: ## Sobe a stack completa (app + Redis + MongoDB + mongo-express)
+docker-up: ## Sobe a stack completa (app + MongoDB + mongo-express)
 	docker-compose up -d
 
 docker-down: ## Derruba a stack completa

@@ -5,20 +5,14 @@ import (
 	"fmt"
 
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
-	"github.com/IsaacDSC/featureflag/pkg/pubsub"
 )
-
-type Publisher interface {
-	Publish(ctx context.Context, channel string, msg pubsub.Payload) error
-}
 
 type Service struct {
 	repository Adapter
-	pub        Publisher
 }
 
-func NewFeatureflagService(repository Adapter, pub Publisher) *Service {
-	return &Service{repository: repository, pub: pub}
+func NewFeatureflagService(repository Adapter) *Service {
+	return &Service{repository: repository}
 }
 
 func (ff Service) CreateOrUpdate(ctx context.Context, project string, featureflag Entity) error {
@@ -27,11 +21,7 @@ func (ff Service) CreateOrUpdate(ctx context.Context, project string, featurefla
 	if err != nil {
 		switch err.(type) {
 		case *errorutils.NotFoundError:
-			if err := ff.repository.SaveFF(ctx, project, featureflag); err != nil {
-				return err
-			}
-
-			return ff.publish(ctx, project, featureflag)
+			return ff.repository.SaveFF(ctx, project, featureflag)
 		default:
 			return err
 		}
@@ -41,15 +31,6 @@ func (ff Service) CreateOrUpdate(ctx context.Context, project string, featurefla
 
 	if err := ff.repository.SaveFF(ctx, project, flag); err != nil {
 		return fmt.Errorf("error on save in repository: %w", err)
-	}
-
-	return ff.publish(ctx, project, flag)
-}
-
-// publish envia o evento no canal isolado do project: events.fanout.featureflag.<project>.
-func (ff Service) publish(ctx context.Context, project string, flag Entity) error {
-	if err := ff.pub.Publish(ctx, fmt.Sprintf("featureflag.%s", project), pubsub.NewPayload(flag)); err != nil {
-		return fmt.Errorf("error on publisher event writer feature flag: %w", err)
 	}
 
 	return nil

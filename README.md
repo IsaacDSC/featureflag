@@ -10,7 +10,7 @@ Este projeto oferece dois serviços principais com diferentes garantias do [teor
 
 | Serviço | Modelo CAP | Descrição |
 |---------|------------|-----------|
-| **Feature Flag** | **AP** (Availability + Partition Tolerance) | Prioriza disponibilidade e tolerância a partições. O SDK mantém cache local, garantindo que a aplicação sempre tenha uma resposta, mesmo em caso de falha de rede. Eventual consistency via SSE. |
+| **Feature Flag** | **AP** (Availability + Partition Tolerance) | Prioriza disponibilidade e tolerância a partições. O SDK mantém cache local, garantindo que a aplicação sempre tenha uma resposta, mesmo em caso de falha de rede. Eventual consistency via polling periódico. |
 | **Content Hub** | **CP** (Consistency + Partition Tolerance) | Prioriza consistência e tolerância a partições. Garante que o conteúdo retornado seja sempre o mais atualizado, mesmo que isso signifique maior latência em casos de partição. |
 
 > 📐 **Arquitetura:** Para detalhes sobre a infraestrutura e fluxo de dados, consulte **[docs/ARCH.md](docs/ARCH.md)**

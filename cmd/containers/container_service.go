@@ -3,7 +3,6 @@ package containers
 import (
 	"github.com/IsaacDSC/featureflag/internal/contenthub"
 	"github.com/IsaacDSC/featureflag/internal/featureflag"
-	"github.com/IsaacDSC/featureflag/pkg/pubsub"
 )
 
 type ServiceContainer struct {
@@ -11,9 +10,9 @@ type ServiceContainer struct {
 	ContentHubService  *contenthub.Service
 }
 
-func NewServiceContainer(repositories RepositoryContainer, pub pubsub.Publisher) ServiceContainer {
+func NewServiceContainer(repositories RepositoryContainer) ServiceContainer {
 	return ServiceContainer{
-		FeatureFlagService: featureflag.NewFeatureflagService(repositories.FeatureFlagRepository, pub),
-		ContentHubService:  contenthub.NewContentHubService(repositories.ContentHubRepository, pub),
+		FeatureFlagService: featureflag.NewFeatureflagService(repositories.FeatureFlagRepository),
+		ContentHubService:  contenthub.NewContentHubService(repositories.ContentHubRepository),
 	}
 }

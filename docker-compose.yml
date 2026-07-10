@@ -1,31 +1,6 @@
 version: "3.8"
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: featureflag-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    command: redis-server --appendonly yes
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          cpus: "0.25"
-          memory: 128M
-    networks:
-      - featureflag-network
-
   mongodb:
     image: mongo:7
     container_name: featureflag-mongodb
@@ -64,7 +39,6 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REDIS_ADDR=redis:6379
       - MONGODB_URI=mongodb://admin:password@mongodb:27017/featureflag?authSource=admin
       - MONGODB_NAME=featureflag
       - REPOSITORY_TYPE=mongodb
@@ -74,8 +48,6 @@ services:
       - SDK_CLIENT_AT=sdk
       - PORT=3000
     depends_on:
-      redis:
-        condition: service_healthy
       mongodb:
         condition: service_healthy
     restart: unless-stopped
@@ -101,10 +73,6 @@ services:
         reservations:
           cpus: "0.5"
           memory: 256M
-    volumes:
-      - ./data:/app/data
-      - ./featureflags.json:/app/featureflags.json
-      - ./contenthub.json:/app/contenthub.json
     networks:
       - featureflag-network
 
@@ -131,8 +99,6 @@ networks:
     driver: bridge
 
 volumes:
-  redis_data:
-    driver: local
   mongodb_data:
     driver: local
   mongodb_config:

@@ -46,7 +46,7 @@ This feature flag and content hub service is designed for specific scenarios tha
 
 - Response time requirements in milliseconds (< 10ms typical)
 - Local cache via SDK to reduce network calls
-- Optimized for fast reads with Redis as backend
+- Optimized for fast reads with an in-memory SDK cache
 
 #### 8. **Controlled Flag Volume**
 

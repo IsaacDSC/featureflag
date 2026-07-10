@@ -13,13 +13,9 @@ import (
 	"github.com/IsaacDSC/featureflag/internal/env"
 	"github.com/IsaacDSC/featureflag/pkg/handlers"
 	"github.com/IsaacDSC/featureflag/pkg/middlewares"
-	"github.com/IsaacDSC/featureflag/pkg/pubsub"
-	"github.com/redis/go-redis/v9"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-var rdb *redis.Client
 
 func init() {
 	env.Init()
@@ -34,19 +30,6 @@ func init() {
 				}
 			}
 		}
-	}
-
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		redisAddr = "localhost:6379"
-	}
-
-	rdb = redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
-
-	if err := rdb.Ping(context.Background()).Err(); err != nil {
-		panic(err)
 	}
 }
 
@@ -76,12 +59,10 @@ func main() {
 		repositories = containers.NewRepositoryContainerMongodb(client, environment.MongoDBName)
 	}
 
-	pub := pubsub.NewPublisher(rdb)
-	services := containers.NewServiceContainer(repositories, pub)
-	sub := pubsub.NewSubscriber(rdb)
+	services := containers.NewServiceContainer(repositories)
 
 	mux := http.NewServeMux()
-	handlers := handlers.NewHandlers(services, sub)
+	handlers := handlers.NewHandlers(services)
 	for path, handler := range handlers {
 		// mux.HandleFunc(path, middlewares.Authorization(handler))
 		mux.HandleFunc(path, middlewares.Logger(handler))
@@ -110,10 +91,6 @@ func main() {
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown: %v", err)
-	}
-
-	if err := rdb.Close(); err != nil {
-		log.Printf("Error closing Redis connection: %v", err)
 	}
 
 	log.Print("[*] Server stopped")
