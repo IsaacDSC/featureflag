@@ -84,13 +84,13 @@ func TestMongoDBRepository_SaveFF(t *testing.T) {
 		},
 	}
 
-	err = repo.SaveFF(context.Background(), entity)
+	err = repo.SaveFF(context.Background(), "proj-a", entity)
 	if err != nil {
 		t.Fatalf("SaveFF falhou: %v", err)
 	}
 
 	// Verificar se foi salvo
-	saved, err := repo.GetFF(context.Background(), "test-flag")
+	saved, err := repo.GetFF(context.Background(), "proj-a", "test-flag")
 	if err != nil {
 		t.Fatalf("GetFF falhou após SaveFF: %v", err)
 	}
@@ -124,20 +124,20 @@ func TestMongoDBRepository_SaveFF_Update(t *testing.T) {
 	}
 
 	// Salvar primeira vez
-	err = repo.SaveFF(context.Background(), entity)
+	err = repo.SaveFF(context.Background(), "proj-a", entity)
 	if err != nil {
 		t.Fatalf("Primeira SaveFF falhou: %v", err)
 	}
 
 	// Atualizar
 	entity.Active = true
-	err = repo.SaveFF(context.Background(), entity)
+	err = repo.SaveFF(context.Background(), "proj-a", entity)
 	if err != nil {
 		t.Fatalf("Segunda SaveFF (update) falhou: %v", err)
 	}
 
 	// Verificar atualização
-	updated, err := repo.GetFF(context.Background(), "update-flag")
+	updated, err := repo.GetFF(context.Background(), "proj-a", "update-flag")
 	if err != nil {
 		t.Fatalf("GetFF falhou: %v", err)
 	}
@@ -166,13 +166,13 @@ func TestMongoDBRepository_GetFF(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	err = repo.SaveFF(context.Background(), entity)
+	err = repo.SaveFF(context.Background(), "proj-a", entity)
 	if err != nil {
 		t.Fatalf("SaveFF falhou: %v", err)
 	}
 
 	// Buscar existente
-	found, err := repo.GetFF(context.Background(), "get-flag")
+	found, err := repo.GetFF(context.Background(), "proj-a", "get-flag")
 	if err != nil {
 		t.Fatalf("GetFF falhou: %v", err)
 	}
@@ -195,7 +195,7 @@ func TestMongoDBRepository_GetFF_NotFound(t *testing.T) {
 	}
 
 	// Tentar buscar flag inexistente
-	_, err = repo.GetFF(context.Background(), "non-existent")
+	_, err = repo.GetFF(context.Background(), "proj-a", "non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao buscar flag inexistente, obteve nil")
 	}
@@ -243,14 +243,14 @@ func TestMongoDBRepository_GetAllFF(t *testing.T) {
 	}
 
 	for _, flag := range flags {
-		err := repo.SaveFF(context.Background(), flag)
+		err := repo.SaveFF(context.Background(), "proj-a", flag)
 		if err != nil {
 			t.Fatalf("SaveFF falhou para %s: %v", flag.FlagName, err)
 		}
 	}
 
 	// Buscar todas
-	all, err := repo.GetAllFF(context.Background())
+	all, err := repo.GetAllFF(context.Background(), "proj-a")
 	if err != nil {
 		t.Fatalf("GetAllFF falhou: %v", err)
 	}
@@ -280,7 +280,7 @@ func TestMongoDBRepository_GetAllFF_Empty(t *testing.T) {
 	}
 
 	// Buscar em coleção vazia
-	all, err := repo.GetAllFF(context.Background())
+	all, err := repo.GetAllFF(context.Background(), "proj-a")
 	if err != nil {
 		t.Fatalf("GetAllFF falhou em coleção vazia: %v", err)
 	}
@@ -310,19 +310,19 @@ func TestMongoDBRepository_DeleteFF(t *testing.T) {
 	}
 
 	// Salvar
-	err = repo.SaveFF(context.Background(), entity)
+	err = repo.SaveFF(context.Background(), "proj-a", entity)
 	if err != nil {
 		t.Fatalf("SaveFF falhou: %v", err)
 	}
 
 	// Deletar
-	err = repo.DeleteFF(context.Background(), "delete-flag")
+	err = repo.DeleteFF(context.Background(), "proj-a", "delete-flag")
 	if err != nil {
 		t.Fatalf("DeleteFF falhou: %v", err)
 	}
 
 	// Verificar se foi deletado
-	_, err = repo.GetFF(context.Background(), "delete-flag")
+	_, err = repo.GetFF(context.Background(), "proj-a", "delete-flag")
 	if err == nil {
 		t.Fatal("Esperado erro ao buscar flag deletada, obteve nil")
 	}
@@ -341,7 +341,7 @@ func TestMongoDBRepository_DeleteFF_NotFound(t *testing.T) {
 	}
 
 	// Tentar deletar flag inexistente
-	err = repo.DeleteFF(context.Background(), "non-existent")
+	err = repo.DeleteFF(context.Background(), "proj-a", "non-existent")
 	if err == nil {
 		t.Fatal("Esperado erro ao deletar flag inexistente, obteve nil")
 	}
@@ -388,7 +388,7 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 				CreatedAt: time.Now(),
 			}
 
-			if err := repo.SaveFF(context.Background(), entity); err != nil {
+			if err := repo.SaveFF(context.Background(), "proj-a", entity); err != nil {
 				errors <- err
 			}
 			done <- true
@@ -407,7 +407,7 @@ func TestMongoDBRepository_ConcurrentOperations(t *testing.T) {
 	}
 
 	// Verificar se a flag existe (deve ter sido salva pelo menos uma vez)
-	_, err = repo.GetFF(context.Background(), "concurrent-flag")
+	_, err = repo.GetFF(context.Background(), "proj-a", "concurrent-flag")
 	if err != nil {
 		t.Fatalf("GetFF falhou após operações concurrent: %v", err)
 	}
@@ -450,7 +450,7 @@ func BenchmarkMongoDBRepository_SaveFF(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = repo.SaveFF(context.Background(), entity)
+		_ = repo.SaveFF(context.Background(), "proj-a", entity)
 	}
 }
 
@@ -489,10 +489,10 @@ func BenchmarkMongoDBRepository_GetFF(b *testing.B) {
 		CreatedAt: time.Now(),
 	}
 
-	_ = repo.SaveFF(context.Background(), entity)
+	_ = repo.SaveFF(context.Background(), "proj-a", entity)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = repo.GetFF(context.Background(), "bench-flag")
+		_, _ = repo.GetFF(context.Background(), "proj-a", "bench-flag")
 	}
 }

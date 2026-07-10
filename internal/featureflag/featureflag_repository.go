@@ -15,14 +15,36 @@ func NewFeatureFlagRepository() *Repository {
 	return &Repository{}
 }
 
-func (fr Repository) SaveFF(ctx context.Context, input Entity) error {
-	featuresFlags, err := fr.GetAllFF(ctx)
+// projectStore representa o layout do arquivo: project -> flagName -> Entity.
+type projectStore map[string]map[string]Entity
+
+func (fr Repository) readStore() (projectStore, error) {
+	b, err := os.ReadFile(env.FilePath)
 	if err != nil {
-		return err
+		if os.IsNotExist(err) {
+			return projectStore{}, nil
+		}
+		return nil, err
 	}
 
-	featuresFlags[input.FlagName] = input
-	b, err := json.Marshal(featuresFlags)
+	if len(b) == 0 {
+		return projectStore{}, nil
+	}
+
+	var store projectStore
+	if err := json.Unmarshal(b, &store); err != nil {
+		return nil, err
+	}
+
+	if store == nil {
+		store = projectStore{}
+	}
+
+	return store, nil
+}
+
+func (fr Repository) writeStore(store projectStore) error {
+	b, err := json.Marshal(store)
 	if err != nil {
 		return err
 	}
@@ -30,58 +52,61 @@ func (fr Repository) SaveFF(ctx context.Context, input Entity) error {
 	return os.WriteFile(env.FilePath, b, 0644)
 }
 
-func (fr Repository) GetFF(ctx context.Context, key string) (Entity, error) {
-	b, err := os.ReadFile(env.FilePath)
+func (fr Repository) SaveFF(ctx context.Context, project string, input Entity) error {
+	store, err := fr.readStore()
+	if err != nil {
+		return err
+	}
+
+	if store[project] == nil {
+		store[project] = map[string]Entity{}
+	}
+
+	store[project][input.FlagName] = input
+
+	return fr.writeStore(store)
+}
+
+func (fr Repository) GetFF(ctx context.Context, project, key string) (Entity, error) {
+	store, err := fr.readStore()
 	if err != nil {
 		return Entity{}, err
 	}
 
-	if len(b) == 0 {
+	flags, ok := store[project]
+	if !ok {
 		return Entity{}, errorutils.NewNotFoundError("featureflag")
 	}
 
-	var ff map[string]Entity
-	if err := json.Unmarshal(b, &ff); err != nil {
-		return Entity{}, err
-	}
-
-	if output, ok := ff[key]; ok {
+	if output, ok := flags[key]; ok {
 		return output, nil
 	}
 
 	return Entity{}, errorutils.NewNotFoundError("featureflag")
 }
 
-func (fr Repository) GetAllFF(ctx context.Context) (map[string]Entity, error) {
-	b, err := os.ReadFile(env.FilePath)
+func (fr Repository) GetAllFF(ctx context.Context, project string) (map[string]Entity, error) {
+	store, err := fr.readStore()
 	if err != nil {
 		return map[string]Entity{}, err
 	}
 
-	if len(b) == 0 {
-		return map[string]Entity{}, nil
+	if flags, ok := store[project]; ok {
+		return flags, nil
 	}
 
-	var ff map[string]Entity
-	if err := json.Unmarshal(b, &ff); err != nil {
-		return map[string]Entity{}, err
-	}
-
-	return ff, nil
+	return map[string]Entity{}, nil
 }
 
-func (fr Repository) DeleteFF(ctx context.Context, key string) error {
-	featuresflags, err := fr.GetAllFF(ctx)
+func (fr Repository) DeleteFF(ctx context.Context, project, key string) error {
+	store, err := fr.readStore()
 	if err != nil {
 		return err
 	}
 
-	delete(featuresflags, key)
-
-	b, err := json.Marshal(featuresflags)
-	if err != nil {
-		return err
+	if flags, ok := store[project]; ok {
+		delete(flags, key)
 	}
 
-	return os.WriteFile(env.FilePath, b, 0644)
+	return fr.writeStore(store)
 }

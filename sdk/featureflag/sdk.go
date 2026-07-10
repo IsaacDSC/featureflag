@@ -18,6 +18,7 @@ import (
 
 type FeatureFlagSDK struct {
 	host      string
+	project   string
 	client    *http.Client
 	ffDefault bool
 
@@ -25,8 +26,8 @@ type FeatureFlagSDK struct {
 	inMemoryFlags map[string]Flag
 }
 
-func NewFeatureFlagSDK(hostFF string) *FeatureFlagSDK {
-	sdk := &FeatureFlagSDK{client: &http.Client{}, host: hostFF, sleeper: time.Second * 60}
+func NewFeatureFlagSDK(hostFF string, project string) *FeatureFlagSDK {
+	sdk := &FeatureFlagSDK{client: &http.Client{}, host: hostFF, project: project, sleeper: time.Second * 60}
 	return sdk
 }
 
@@ -73,7 +74,7 @@ func (ff *FeatureFlagSDK) Listenner(ctx context.Context) (*FeatureFlagSDK, error
 	// Cliente sem timeout para a conexão SSE (que precisa ficar aberta)
 	sseClient := &http.Client{}
 
-	serverUrl := fmt.Sprintf("%s/events/featureflag", ff.host)
+	serverUrl := fmt.Sprintf("%s/events/featureflag/%s", ff.host, ff.project)
 	req, err := http.NewRequestWithContext(ctx, "GET", serverUrl, nil)
 	if err != nil {
 		log.Fatal("Erro ao criar request:", err)
@@ -189,7 +190,7 @@ func (ff *FeatureFlagSDK) GetFeatureFlag(key string, sessionID ...string) FFResp
 }
 
 func (ff FeatureFlagSDK) getAllFlags(ctx context.Context) (map[string]Flag, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/featureflags", ff.host))
+	resp, err := http.Get(fmt.Sprintf("%s/featureflag/%s/all", ff.host, ff.project))
 	if err != nil {
 		return nil, fmt.Errorf("error on get features flags :%w", err)
 	}

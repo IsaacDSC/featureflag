@@ -10,6 +10,7 @@ import (
 
 type Entity struct {
 	ID         uuid.UUID         `json:"id" bson:"id"`
+	Project    string            `json:"project" bson:"project"`
 	FlagName   string            `json:"flag_name" bson:"flag_name"`
 	Strategies strategy.Strategy `json:"strategy" bson:"strategy"`
 	Active     bool              `json:"active" bson:"active"`

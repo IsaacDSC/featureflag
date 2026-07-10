@@ -34,3 +34,23 @@ func CreateUniqueIndex(collection *mongo.Collection, indexModel IndexModel) erro
 	_, err := collection.Indexes().CreateOne(ctx, idxModel)
 	return err
 }
+
+// CreateUniqueCompoundIndex creates a unique compound index over the given fields
+// (in order) with timeout of 2 seconds.
+func CreateUniqueCompoundIndex(collection *mongo.Collection, fields ...IndexModel) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	keys := bson.D{}
+	for _, f := range fields {
+		keys = append(keys, bson.E{Key: f.String(), Value: 1})
+	}
+
+	idxModel := mongo.IndexModel{
+		Keys:    keys,
+		Options: options.Index().SetUnique(true),
+	}
+
+	_, err := collection.Indexes().CreateOne(ctx, idxModel)
+	return err
+}

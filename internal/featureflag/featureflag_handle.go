@@ -15,7 +15,7 @@ type Handler struct {
 	service *Service
 }
 
-const featureFlagPrefix = "/featureflag"
+const featureFlagPrefix = "/featureflag/{project}"
 
 func NewFeatureFlagHandler(service *Service) *Handler {
 	handler := new(Handler)
@@ -23,7 +23,7 @@ func NewFeatureFlagHandler(service *Service) *Handler {
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
 		fmt.Sprintf("PATCH %s", featureFlagPrefix):         handler.createOrUpdate,
 		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.Authorization(middlewares.CheckPermission(handler.delete, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %ss", featureFlagPrefix):          handler.getAll,
+		fmt.Sprintf("GET %s/all", featureFlagPrefix):       handler.getAll,
 		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.Authorization(middlewares.CheckPermission(handler.get, middlewares.USERNAME_SERVICE)),
 		fmt.Sprintf("GET %s/sdk/{key}", featureFlagPrefix): middlewares.Authorization(middlewares.CheckPermission(handler.getFeatureFlagBySDK, middlewares.USERNAME_SDK)),
 	}
@@ -39,6 +39,8 @@ func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	ctx := r.Context()
 
+	project := r.PathValue("project")
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -51,14 +53,14 @@ func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	featureflag, err := ToDomain(payload)
+	featureflag, err := ToDomain(project, payload)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
 
-	if err := h.service.CreateOrUpdate(ctx, featureflag); err != nil {
+	if err := h.service.CreateOrUpdate(ctx, project, featureflag); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -69,13 +71,21 @@ func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	project := r.PathValue("project")
+	if err := ValidateProject(project); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	key := r.PathValue("key")
 	if key == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.RemoveFeatureFlag(ctx, key); err != nil {
+	if err := h.service.RemoveFeatureFlag(ctx, project, key); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 		return
@@ -86,6 +96,14 @@ func (h *Handler) delete(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	project := r.PathValue("project")
+	if err := ValidateProject(project); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	key := r.PathValue("key")
 
 	if key == "" {
@@ -95,7 +113,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Header.Get("session_id")
-	ff, err := h.service.GetFeatureFlag(ctx, key, sessionID)
+	ff, err := h.service.GetFeatureFlag(ctx, project, key, sessionID)
 
 	if err != nil {
 		switch err.(type) {
@@ -123,6 +141,14 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	project := r.PathValue("project")
+	if err := ValidateProject(project); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	key := r.PathValue("key")
 
 	if key == "" {
@@ -132,7 +158,7 @@ func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := r.Header.Get("session_id")
-	statusFF, err := h.service.GetFeatureFlagBySDK(ctx, key, sessionID)
+	statusFF, err := h.service.GetFeatureFlagBySDK(ctx, project, key, sessionID)
 
 	if err != nil {
 		switch err.(type) {
@@ -153,10 +179,18 @@ func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	project := r.PathValue("project")
+	if err := ValidateProject(project); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
 	// TODO: Possibilitar receber um parametro de query para filtrar por status
 	// status := r.URL.Query().Get("status")
 
-	database, err := h.service.GetAllFeatureFlag(ctx)
+	database, err := h.service.GetAllFeatureFlag(ctx, project)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

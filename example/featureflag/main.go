@@ -11,7 +11,7 @@ import (
 func main() {
 
 	ctx := context.Background()
-	ff := featureflag.NewFeatureFlagSDK("http://localhost:3000")
+	ff := featureflag.NewFeatureFlagSDK("http://localhost:3000", "example")
 
 	go func() {
 		_, err := ff.Listenner(ctx)
