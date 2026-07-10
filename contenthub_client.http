@@ -1,57 +1,83 @@
-### Authentication service
-POST {{host}}/auth
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+# Content Hub (CP / strong consistency). Não é escopado por project.
+# As rotas de escrita/admin têm o middleware de Authorization comentado hoje,
+# então nenhuma exige token. Quirks reais da API:
+#   - a listagem fica em /contenthubs (plural)
+#   - GET/DELETE /contenthub/{key} leem a chave do query ?key= (não do path);
+#     só /contenthub/sdk/{key} usa o valor do path.
 
-###
-
-
-###
-PATCH  {{host}}/contenthub
-Accept: application/json
-Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
-Cookie: {{cookie}}
-
-{
-  "flag_name": "teste1",
-  "active": true
-}
-
-
-###
+### Cria/atualiza um conteúdo
 PATCH {{host}}/contenthub
 Accept: application/json
 Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
-Cookie: {{cookie}}
 
 {
-  "flag_name": "teste2",
+  "key": "homepage_banner",
+  "value": "enabled",
+  "description": "Main homepage banner with weighted distribution",
   "active": true,
-  "strategy": {
-    "percent": 50
-  }
+  "created_at": "2024-01-15T10:30:00Z",
+  "session_strategy": [
+    {
+      "session_id": "session-primers-123",
+      "response": {
+        "id": "promo-black-friday",
+        "title": "Black Friday - Primers 50% OFF",
+        "content": "Take advantage of our Black Friday deals!",
+        "ctaText": "Shop Now",
+        "ctaUrl": "https://example.com/promo/black-friday"
+      }
+    },
+    {
+      "session_id": "default",
+      "response": {
+        "id": "promo-black-friday",
+        "title": "Stay tuned for promotions",
+        "content": "Don't miss out on our Black Friday deals!",
+        "ctaText": "Shop Now",
+        "ctaUrl": "https://example.com/promo/black-friday"
+      }
+    }
+  ],
+  "balancer_strategy": [
+    {
+      "weight": 50,
+      "response": {
+        "id": "promo-black-friday",
+        "title": "Black Friday - 50% OFF",
+        "content": "Take advantage of our Black Friday deals!",
+        "ctaText": "Shop Now",
+        "ctaUrl": "https://example.com/promo/black-friday"
+      }
+    },
+    {
+      "weight": 50,
+      "response": {
+        "id": "seasonal-collection",
+        "title": "New Seasonal Collection",
+        "content": "Discover the latest trends of the season",
+        "ctaText": "View Collection",
+        "ctaUrl": "https://example.com/collections/seasonal"
+      }
+    }
+  ]
 }
 
 
-
-###
-GET {{host}}/contenthub
+### Lista todos os conteúdos (note o plural: /contenthubs)
+GET {{host}}/contenthubs
 Accept: application/json
-Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
 
 
-###
-GET {{host}}/contenthub/teste1
+### Busca um conteúdo (a chave vem do query ?key=)
+GET {{host}}/contenthub/homepage_banner?key=homepage_banner
 Accept: application/json
-Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
 
 
-
-### SDK
-GET {{host}}/contenthub/sdk/teste3
+### Leitura via SDK (a chave vem do path)
+GET {{host}}/contenthub/sdk/homepage_banner
 Accept: application/json
-Content-Type: application/json
-Authorization: 16db7723-bdd2-44b8-8a0d-9598ea45fb96
+
+
+### Remove um conteúdo (a chave vem do query ?key=)
+DELETE {{host}}/contenthub/homepage_banner?key=homepage_banner
+Accept: application/json

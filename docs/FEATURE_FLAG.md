@@ -15,7 +15,6 @@
 | `GET /featureflag/{project}/{key}` | Busca uma flag (header `session_id` opcional) | `SERVICE_CLIENT` |
 | `GET /featureflag/{project}/sdk/{key}` | Leitura via SDK (retorna `{"status":"true"}`) | `SDK_CLIENT` |
 | `DELETE /featureflag/{project}/{key}` | Remove uma flag | `SERVICE_CLIENT` |
-| `GET /events/featureflag/{project}` | Stream SSE de mudanças do project | — |
 
 A autorização é feita pelo header `Authorization` com o valor cru do token
 (`SERVICE_CLIENT_AT` → `SERVICE_CLIENT`; `SDK_CLIENT_AT` → `SDK_CLIENT`). Nos
@@ -90,8 +89,9 @@ curl -X DELETE http://localhost:3000/featureflag/checkout/teste3 \
 ### Feature Flag Usage
 
 O SDK é instanciado com o `host` e o `project` que ele deve observar. Ele busca
-todas as flags do project na inicialização, abre a conexão SSE
-(`/events/featureflag/{project}`) e mantém um refresh periódico.
+todas as flags do project na inicialização e mantém o cache atualizado via
+polling periódico (`WithEventualConsistency` define o intervalo). Não há SSE:
+mudanças são refletidas no próximo ciclo de refresh.
 
 ```go
 package main

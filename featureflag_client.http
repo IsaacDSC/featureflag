@@ -80,8 +80,3 @@ DELETE {{host}}/featureflag/checkout/teste99
 Accept: application/json
 Content-Type: application/json
 Authorization: service
-
-
-### Stream SSE por project (events.fanout.featureflag.checkout)
-GET {{host}}/events/featureflag/checkout
-Accept: text/event-stream

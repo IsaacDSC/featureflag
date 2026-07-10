@@ -1,6 +1,28 @@
 
 ## Content Hub
 
+> **Modelo CP (strong consistency).** Diferente do Feature Flag, o Content Hub
+> **não** é escopado por `project` e serve sempre o valor mais recente. As rotas
+> de escrita/admin têm o middleware de `Authorization` **comentado no momento**,
+> então nenhuma exige token hoje.
+
+### Rotas
+
+| Método & Path | Descrição | Chave lida de |
+|---|---|---|
+| `PATCH /contenthub` | Cria/atualiza um conteúdo | body (`key`) |
+| `GET /contenthubs` | Lista todos os conteúdos | — |
+| `GET /contenthub/{key}` | Busca um conteúdo | **query `?key=`** |
+| `GET /contenthub/sdk/{key}` | Leitura via SDK | path `{key}` |
+| `DELETE /contenthub/{key}` | Remove um conteúdo | **query `?key=`** |
+
+> ⚠️ Atenção às inconsistências reais da API atual:
+> - A lista fica em `/contenthub`**s** (plural), não `/contenthub`.
+> - `GET /contenthub/{key}` e `DELETE /contenthub/{key}` ignoram o segmento do
+>   path e leem a chave do query param `?key=`. O segmento precisa existir só
+>   para casar a rota (ex.: `GET /contenthub/x?key=homepage_banner`). Apenas
+>   `/contenthub/sdk/{key}` usa o valor do path.
+
 ### Creating a Content Hub
 
 ```sh
@@ -97,7 +119,28 @@ curl -X PATCH http://localhost:3000/contenthub \
 }'
 ```
 
+### Listar / buscar / remover
+
+```sh
+# Lista todos os conteúdos (note o plural: /contenthubs)
+curl http://localhost:3000/contenthubs
+
+# Busca um conteúdo (a chave vem do query ?key=)
+curl "http://localhost:3000/contenthub/homepage_banner?key=homepage_banner"
+
+# Leitura via SDK (a chave vem do path)
+curl http://localhost:3000/contenthub/sdk/homepage_banner
+
+# Remove um conteúdo (a chave vem do query ?key=)
+curl -X DELETE "http://localhost:3000/contenthub/homepage_banner?key=homepage_banner"
+```
+
 ### Content Hub Usage
+
+O SDK é instanciado apenas com o `host` (não há `project` no Content Hub). Ele
+carrega todos os conteúdos na inicialização via `/contenthubs` e mantém o cache
+atualizado via polling periódico (`WithEventualConsistency` define o intervalo).
+Não há SSE.
 
 ```go
 package main
@@ -147,5 +190,4 @@ func main() {
 		panic(err)
 	}
 }
-
 ```

@@ -1,18 +1,12 @@
 package featureflag
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"os"
-	"os/signal"
 	"reflect"
-	"strings"
-	"syscall"
 	"time"
 )
 
@@ -36,6 +30,10 @@ func (c *FeatureFlagSDK) WithEventualConsistency(time time.Duration) *FeatureFla
 	return c
 }
 
+// Listenner carrega as flags do project na inicialização e mantém o cache em
+// memória atualizado via polling periódico (WithEventualConsistency define o
+// intervalo). A chamada bloqueia até o contexto ser cancelado, então normalmente
+// é executada em uma goroutine.
 func (ff *FeatureFlagSDK) Listenner(ctx context.Context) (*FeatureFlagSDK, error) {
 	flags, err := ff.getAllFlags(ctx)
 	if err != nil {
@@ -44,103 +42,16 @@ func (ff *FeatureFlagSDK) Listenner(ctx context.Context) (*FeatureFlagSDK, error
 
 	ff.inMemoryFlags = flags
 
-	// Configurar context com cancelamento
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Capturar sinais de interrupção
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-sigChan
-		fmt.Println("\n🛑 Encerrando cliente...")
-		cancel()
-	}()
-
-	// Iniciar refresh em background
-	go ff.refresh(ctx)
-
-	//FICAR ESCUTANDO EVENTOS (SSE)
-	// Cliente com timeout apenas para verificar se o servidor está rodando
+	// Verificar se o servidor está acessível antes de iniciar o polling.
 	clientWithTimeout := &http.Client{Timeout: 5 * time.Second}
-	_, err = clientWithTimeout.Get(ff.host)
-	if err != nil {
+	if _, err := clientWithTimeout.Get(ff.host); err != nil {
 		fmt.Println("❌ Servidor não está rodando!")
-		fmt.Println("💡 Inicie o servidor primeiro: go run ./cmd/server")
+		fmt.Println("💡 Inicie o servidor primeiro: go run ./cmd")
 		return nil, err
 	}
 
-	// Cliente sem timeout para a conexão SSE (que precisa ficar aberta)
-	sseClient := &http.Client{}
-
-	serverUrl := fmt.Sprintf("%s/events/featureflag/%s", ff.host, ff.project)
-	req, err := http.NewRequestWithContext(ctx, "GET", serverUrl, nil)
-	if err != nil {
-		log.Fatal("Erro ao criar request:", err)
-	}
-
-	req.Header.Set("Accept", "text/event-stream")
-	req.Header.Set("Cache-Control", "no-cache")
-
-	resp, err := sseClient.Do(req)
-	if err != nil {
-		log.Fatal("Erro ao conectar:", err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Status inválido: %d", resp.StatusCode)
-	}
-
-	scanner := bufio.NewScanner(resp.Body)
-	done := make(chan bool)
-	go func() {
-		defer func() { done <- true }()
-
-		for scanner.Scan() {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-
-			line := strings.TrimSpace(scanner.Text())
-
-			if data, ok := strings.CutPrefix(line, "data: "); ok {
-
-				var flag Flag
-				if err := json.Unmarshal([]byte(data), &flag); err == nil {
-					fmt.Printf("📦 Feature Flag recebida:\n")
-					fmt.Println()
-					fmt.Printf("%+v\n", flag)
-					fmt.Println()
-
-					ff.inMemoryFlags[flag.FlagName] = flag
-					for _, v := range ff.inMemoryFlags {
-						fmt.Printf("%+v\n", v)
-					}
-					continue
-				}
-
-				// Se não conseguir parsear, mostrar raw data
-				fmt.Printf("📨 Mensagem recebida:\n")
-				fmt.Printf("   %s\n", data)
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			fmt.Printf("❌ Erro ao ler stream: %v\n", err)
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		fmt.Println("🔌 Conexão cancelada pelo usuário")
-	case <-done:
-		fmt.Println("🔌 Conexão encerrada")
-	}
+	// Polling bloqueante até o contexto ser cancelado.
+	ff.refresh(ctx)
 
 	return ff, nil
 }
