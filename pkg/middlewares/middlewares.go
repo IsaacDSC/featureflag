@@ -219,9 +219,28 @@ func (rw *responseWriter) Push(target string, opts *http.PushOptions) error {
 	return errors.New("http.Pusher not supported")
 }
 
+// noLogPrefixes lista os prefixos de rota cujas requisições não devem gerar
+// o log "HTTP Request" — health check e o frontend do dashboard (assets
+// estáticos, poll de navegação) geram ruído sem valor de observabilidade.
+var noLogPrefixes = []string{"/ping", "/dashboard"}
+
+func shouldSkipLog(path string) bool {
+	for _, prefix := range noLogPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // Logger middleware adiciona logger ao contexto e loga todas as responses
 func Logger(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if shouldSkipLog(r.URL.Path) {
+			h.ServeHTTP(w, r.WithContext(ctxlog.SetLogger(r.Context(), ctxlog.NewLogger(r.Context()))))
+			return
+		}
+
 		start := time.Now()
 
 		// Cria logger e adiciona ao contexto
