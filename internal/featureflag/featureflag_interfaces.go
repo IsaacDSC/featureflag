@@ -9,3 +9,9 @@ type Adapter interface {
 	DeleteFF(ctx context.Context, project, key string) error
 	ListProjects(ctx context.Context) ([]string, error)
 }
+
+// Auditor grava uma alteração de negócio na trilha de auditoria (email é lido
+// do contexto pelo próprio implementador). Satisfeita por *audit.Service.
+type Auditor interface {
+	RecordChange(ctx context.Context, action, project, entityKey string) error
+}

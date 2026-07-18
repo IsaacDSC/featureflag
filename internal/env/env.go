@@ -9,13 +9,14 @@ import (
 )
 
 type Environment struct {
-	SecretKey         string        `env:"SECRET_KEY" env-required:"true"`
-	ServiceClientAT   string        `env:"SERVICE_CLIENT_AT" env-required:"true"`
-	SDKClientAT       string        `env:"SDK_CLIENT_AT" env-required:"true"`
-	RepositoryType    string        `env:"REPOSITORY_TYPE" env-default:"jsonfile"`
-	MongoDBURI        string        `env:"MONGODB_URI"`
-	MongoDBName       string        `env:"MONGODB_NAME"`
-	MongoDbIdxTimeout time.Duration `env:"MONGODB_IDX_TIMEOUT" env-default:"2s"`
+	SecretKey         string            `env:"SECRET_KEY" env-required:"true"`
+	ServiceClientAT   string            `env:"SERVICE_CLIENT_AT" env-required:"true"`
+	SDKClientAT       string            `env:"SDK_CLIENT_AT" env-required:"true"`
+	RepositoryType    string            `env:"REPOSITORY_TYPE" env-default:"jsonfile"`
+	MongoDBURI        string            `env:"MONGODB_URI"`
+	MongoDBName       string            `env:"MONGODB_NAME"`
+	MongoDbIdxTimeout time.Duration     `env:"MONGODB_IDX_TIMEOUT" env-default:"2s"`
+	AdminUsers        map[string]string `env:"ADMIN_USERS" env-required:"false"`
 }
 
 var (

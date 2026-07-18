@@ -9,6 +9,7 @@ import (
 	"github.com/IsaacDSC/featureflag/internal/dashboard"
 	"github.com/IsaacDSC/featureflag/internal/featureflag"
 	"github.com/IsaacDSC/featureflag/internal/health"
+	"github.com/IsaacDSC/featureflag/internal/user"
 )
 
 func NewHandlers(services containers.ServiceContainer) map[string]func(w http.ResponseWriter, r *http.Request) {
@@ -18,7 +19,11 @@ func NewHandlers(services containers.ServiceContainer) map[string]func(w http.Re
 		output[k] = v
 	}
 
-	for k, v := range auth.NewAuthHandler().GetRoutes() {
+	for k, v := range auth.NewAuthHandler(services.UserService).GetRoutes() {
+		output[k] = v
+	}
+
+	for k, v := range user.NewUserHandler(services.UserService).GetRoutes() {
 		output[k] = v
 	}
 

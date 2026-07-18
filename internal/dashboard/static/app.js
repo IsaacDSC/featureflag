@@ -2,9 +2,16 @@
   const state = {
     project: null,
     flags: [],
+    users: [],
   };
 
   const $ = (id) => document.getElementById(id);
+
+  const navFlagsBtn = $("nav-flags-btn");
+  const navUsersBtn = $("nav-users-btn");
+  const projectPicker = $("project-picker");
+  const flagsView = $("flags-view");
+  const usersView = $("users-view");
 
   const projectInput = $("project-input");
   const projectList = $("project-list");
@@ -15,6 +22,17 @@
   const flagsTbody = $("flags-tbody");
   const flagsEmpty = $("flags-empty");
   const newFlagBtn = $("new-flag-btn");
+  const logoutBtn = $("logout-btn");
+
+  const usersTbody = $("users-tbody");
+  const usersEmpty = $("users-empty");
+  const newUserBtn = $("new-user-btn");
+  const userModal = $("user-modal");
+  const userForm = $("user-form");
+  const userEmailInput = $("user-email");
+  const userPasswordInput = $("user-password");
+  const userFormError = $("user-form-error");
+  const userModalCancel = $("user-modal-cancel");
 
   const flagModal = $("flag-modal");
   const modalTitle = $("modal-title");
@@ -294,6 +312,86 @@
     tokenModal.classList.add("hidden");
   }
 
+  function switchView(view) {
+    const showUsers = view === "users";
+    usersView.classList.toggle("hidden", !showUsers);
+    flagsView.classList.toggle("hidden", showUsers);
+    projectPicker.classList.toggle("hidden", showUsers);
+    navUsersBtn.classList.toggle("active", showUsers);
+    navFlagsBtn.classList.toggle("active", !showUsers);
+
+    if (showUsers) {
+      loadUsers().catch((e) => console.warn("failed to load users", e));
+    }
+  }
+
+  function renderUsers() {
+    usersTbody.innerHTML = "";
+
+    if (state.users.length === 0) {
+      usersEmpty.classList.remove("hidden");
+      return;
+    }
+    usersEmpty.classList.add("hidden");
+
+    state.users
+      .slice()
+      .sort((a, b) => a.email.localeCompare(b.email))
+      .forEach((user) => {
+        const tr = document.createElement("tr");
+
+        const emailTd = document.createElement("td");
+        emailTd.className = "flag-name";
+        emailTd.textContent = user.email;
+        tr.appendChild(emailTd);
+
+        const createdTd = document.createElement("td");
+        createdTd.className = "strategy-desc";
+        createdTd.textContent = user.created_at ? new Date(user.created_at).toLocaleString() : "";
+        tr.appendChild(createdTd);
+
+        const actionsTd = document.createElement("td");
+        actionsTd.className = "row-actions";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Delete";
+        deleteBtn.className = "danger";
+        deleteBtn.addEventListener("click", () => deleteUser(user));
+        actionsTd.appendChild(deleteBtn);
+
+        tr.appendChild(actionsTd);
+        usersTbody.appendChild(tr);
+      });
+  }
+
+  async function loadUsers() {
+    const users = await fetchJSON("/users");
+    state.users = users || [];
+    renderUsers();
+  }
+
+  async function deleteUser(user) {
+    if (!confirm(`Delete user "${user.email}"?`)) return;
+
+    try {
+      await fetchJSON(`/users/${encodeURIComponent(user.email)}`, { method: "DELETE" });
+      await loadUsers();
+    } catch (e) {
+      alert(`Failed to delete user: ${e.message}`);
+    }
+  }
+
+  function openNewUserModal() {
+    userForm.reset();
+    userFormError.classList.add("hidden");
+    userModal.classList.remove("hidden");
+    userEmailInput.focus();
+  }
+
+  function closeUserModal() {
+    userModal.classList.add("hidden");
+  }
+
   loadBtn.addEventListener("click", async () => {
     const project = projectInput.value.trim();
     if (!project) return;
@@ -349,6 +447,48 @@
   tokenSave.addEventListener("click", () => {
     localStorage.setItem(TOKEN_KEY, tokenInput.value.trim());
     closeTokenModal();
+  });
+
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await fetchJSON("/auth/logout", { method: "POST" });
+    } catch (e) {
+      // best effort: even if the request fails, send the user back to login
+      console.warn("logout request failed", e);
+    }
+    window.location.href = "/auth/login/";
+  });
+
+  navFlagsBtn.addEventListener("click", () => switchView("flags"));
+  navUsersBtn.addEventListener("click", () => switchView("users"));
+
+  newUserBtn.addEventListener("click", openNewUserModal);
+  userModalCancel.addEventListener("click", closeUserModal);
+  userModal.addEventListener("click", (e) => {
+    if (e.target === userModal) closeUserModal();
+  });
+
+  userForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    userFormError.classList.add("hidden");
+
+    const payload = {
+      email: userEmailInput.value.trim(),
+      password: userPasswordInput.value,
+    };
+
+    try {
+      await fetchJSON("/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      closeUserModal();
+      await loadUsers();
+    } catch (err) {
+      userFormError.textContent = err.message;
+      userFormError.classList.remove("hidden");
+    }
   });
 
   async function init() {

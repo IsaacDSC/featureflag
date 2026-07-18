@@ -64,6 +64,28 @@ body {
   margin: 0;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.view-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-btn {
+  background: transparent;
+  border-color: transparent;
+}
+
+.nav-btn.active {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
 .project-picker {
   display: flex;
   gap: 8px;

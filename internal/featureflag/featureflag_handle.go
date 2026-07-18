@@ -22,10 +22,10 @@ func NewFeatureFlagHandler(service *Service) *Handler {
 	handler.service = service
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
 		"GET /featureflag/projects":                        handler.listProjects,
-		fmt.Sprintf("PATCH %s", featureFlagPrefix):         handler.createOrUpdate,
-		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.Authorization(middlewares.CheckPermission(handler.delete, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("PATCH %s", featureFlagPrefix):         middlewares.RequireServiceOrLogin(handler.createOrUpdate),
+		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.RequireServiceOrLogin(handler.delete),
 		fmt.Sprintf("GET %s/all", featureFlagPrefix):       handler.getAll,
-		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.Authorization(middlewares.CheckPermission(handler.get, middlewares.USERNAME_SERVICE)),
+		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.RequireServiceOrLogin(handler.get),
 		fmt.Sprintf("GET %s/sdk/{key}", featureFlagPrefix): middlewares.Authorization(middlewares.CheckPermission(handler.getFeatureFlagBySDK, middlewares.USERNAME_SDK)),
 	}
 

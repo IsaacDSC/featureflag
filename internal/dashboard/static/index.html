@@ -9,37 +9,66 @@
 <body>
   <header class="topbar">
     <h1>Feature Flags</h1>
-    <div class="project-picker">
-      <input id="project-input" list="project-list" placeholder="project (e.g.: checkout-web)" autocomplete="off" />
-      <datalist id="project-list"></datalist>
-      <button id="load-btn" type="button">Load</button>
+    <div class="topbar-actions">
+      <nav class="view-nav">
+        <button id="nav-flags-btn" type="button" class="nav-btn active">Flags</button>
+        <button id="nav-users-btn" type="button" class="nav-btn">Users</button>
+      </nav>
+      <div id="project-picker" class="project-picker">
+        <input id="project-input" list="project-list" placeholder="project (e.g.: checkout-web)" autocomplete="off" />
+        <datalist id="project-list"></datalist>
+        <button id="load-btn" type="button">Load</button>
+      </div>
+      <button id="logout-btn" type="button" title="Sign out">Logout</button>
     </div>
   </header>
 
   <main>
-    <section id="empty-state" class="empty-state">
-      <p>Enter or select a project above to view and manage its feature flags.</p>
+    <section id="flags-view">
+      <section id="empty-state" class="empty-state">
+        <p>Enter or select a project above to view and manage its feature flags.</p>
+      </section>
+
+      <section id="board" class="board hidden">
+        <div class="board-header">
+          <h2 id="board-project"></h2>
+          <button id="new-flag-btn" type="button" class="primary">+ New flag</button>
+        </div>
+
+        <table id="flags-table">
+          <thead>
+            <tr>
+              <th>Flag</th>
+              <th>Status</th>
+              <th>Strategy</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="flags-tbody"></tbody>
+        </table>
+
+        <p id="flags-empty" class="flags-empty hidden">No feature flags registered for this project yet.</p>
+      </section>
     </section>
 
-    <section id="board" class="board hidden">
+    <section id="users-view" class="board hidden">
       <div class="board-header">
-        <h2 id="board-project"></h2>
-        <button id="new-flag-btn" type="button" class="primary">+ New flag</button>
+        <h2>Users</h2>
+        <button id="new-user-btn" type="button" class="primary">+ New user</button>
       </div>
 
-      <table id="flags-table">
+      <table id="users-table">
         <thead>
           <tr>
-            <th>Flag</th>
-            <th>Status</th>
-            <th>Strategy</th>
+            <th>Email</th>
+            <th>Created</th>
             <th></th>
           </tr>
         </thead>
-        <tbody id="flags-tbody"></tbody>
+        <tbody id="users-tbody"></tbody>
       </table>
 
-      <p id="flags-empty" class="flags-empty hidden">No feature flags registered for this project yet.</p>
+      <p id="users-empty" class="flags-empty hidden">No users registered yet.</p>
     </section>
   </main>
 
@@ -74,6 +103,29 @@
         <div class="modal-actions">
           <button type="button" id="modal-cancel">Cancel</button>
           <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="user-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3>New user</h3>
+      <form id="user-form">
+        <label>
+          Email
+          <input id="user-email" name="email" type="email" required autocomplete="off" />
+        </label>
+        <label>
+          Password
+          <input id="user-password" name="password" type="password" required minlength="1" autocomplete="new-password" />
+        </label>
+
+        <p id="user-form-error" class="form-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="user-modal-cancel">Cancel</button>
+          <button type="submit" class="primary">Create</button>
         </div>
       </form>
     </div>
