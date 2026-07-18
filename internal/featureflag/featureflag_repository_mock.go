@@ -78,6 +78,21 @@ func (mr *MockFeatureFlagRepositoryMockRecorder) GetFF(ctx, project, key interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFF", reflect.TypeOf((*MockFeatureFlagRepository)(nil).GetFF), ctx, project, key)
 }
 
+// ListProjects mocks base method.
+func (m *MockFeatureFlagRepository) ListProjects(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProjects", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProjects indicates an expected call of ListProjects.
+func (mr *MockFeatureFlagRepositoryMockRecorder) ListProjects(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProjects", reflect.TypeOf((*MockFeatureFlagRepository)(nil).ListProjects), ctx)
+}
+
 // SaveFF mocks base method.
 func (m *MockFeatureFlagRepository) SaveFF(ctx context.Context, project string, input Entity) error {
 	m.ctrl.T.Helper()

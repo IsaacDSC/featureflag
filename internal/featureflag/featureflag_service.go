@@ -28,6 +28,7 @@ func (ff Service) CreateOrUpdate(ctx context.Context, project string, featurefla
 	}
 
 	flag.Active = featureflag.Active
+	flag.Strategies = featureflag.Strategies
 
 	if err := ff.repository.SaveFF(ctx, project, flag); err != nil {
 		return fmt.Errorf("error on save in repository: %w", err)
@@ -42,6 +43,10 @@ func (ff Service) RemoveFeatureFlag(ctx context.Context, project, key string) er
 
 func (ff Service) GetAllFeatureFlag(ctx context.Context, project string) (map[string]Entity, error) {
 	return ff.repository.GetAllFF(ctx, project)
+}
+
+func (ff Service) ListProjects(ctx context.Context) ([]string, error) {
+	return ff.repository.ListProjects(ctx)
 }
 
 func (ff Service) GetFeatureFlag(ctx context.Context, project, key string, sessionID string) (Entity, error) {

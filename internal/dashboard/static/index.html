@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feature Flag Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Feature Flags</h1>
+    <div class="project-picker">
+      <input id="project-input" list="project-list" placeholder="project (e.g.: checkout-web)" autocomplete="off" />
+      <datalist id="project-list"></datalist>
+      <button id="load-btn" type="button">Load</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="empty-state" class="empty-state">
+      <p>Enter or select a project above to view and manage its feature flags.</p>
+    </section>
+
+    <section id="board" class="board hidden">
+      <div class="board-header">
+        <h2 id="board-project"></h2>
+        <button id="new-flag-btn" type="button" class="primary">+ New flag</button>
+      </div>
+
+      <table id="flags-table">
+        <thead>
+          <tr>
+            <th>Flag</th>
+            <th>Status</th>
+            <th>Strategy</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="flags-tbody"></tbody>
+      </table>
+
+      <p id="flags-empty" class="flags-empty hidden">No feature flags registered for this project yet.</p>
+    </section>
+  </main>
+
+  <div id="flag-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3 id="modal-title">New feature flag</h3>
+      <form id="flag-form">
+        <label>
+          Flag name
+          <input id="flag-name" name="flag_name" required pattern="[a-zA-Z0-9_-]+" placeholder="e.g.: new-checkout" />
+        </label>
+
+        <label class="checkbox-row">
+          <input id="flag-active" name="active" type="checkbox" />
+          Active
+        </label>
+
+        <fieldset>
+          <legend>Rollout strategy (optional)</legend>
+          <label>
+            Rollout percentage (0-100)
+            <input id="flag-percent" name="percent" type="number" min="0" max="100" step="1" />
+          </label>
+          <label>
+            Session IDs (comma-separated)
+            <input id="flag-sessions" name="sessions" placeholder="session-a, session-b" />
+          </label>
+        </fieldset>
+
+        <p id="form-error" class="form-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="token-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3>Service token</h3>
+      <p>Deleting a flag requires the <code>SERVICE_CLIENT_AT</code> bearer token. It is used only in this browser session (localStorage).</p>
+      <label>
+        Authorization token
+        <input id="service-token-input" placeholder="Bearer token" />
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="token-cancel">Cancel</button>
+        <button type="button" id="token-save" class="primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="theme-toggle-btn" class="settings-fab theme-fab" type="button" title="Toggle light/dark theme"></button>
+  <button id="settings-btn" class="settings-fab" type="button" title="Configure service token">⚙</button>
+
+  <script src="app.js"></script>
+</body>
+</html>

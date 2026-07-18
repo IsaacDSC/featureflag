@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"sort"
 
 	"github.com/IsaacDSC/featureflag/internal/env"
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
@@ -96,6 +97,22 @@ func (fr Repository) GetAllFF(ctx context.Context, project string) (map[string]E
 	}
 
 	return map[string]Entity{}, nil
+}
+
+func (fr Repository) ListProjects(ctx context.Context) ([]string, error) {
+	store, err := fr.readStore()
+	if err != nil {
+		return nil, err
+	}
+
+	projects := make([]string, 0, len(store))
+	for project := range store {
+		projects = append(projects, project)
+	}
+
+	sort.Strings(projects)
+
+	return projects, nil
 }
 
 func (fr Repository) DeleteFF(ctx context.Context, project, key string) error {

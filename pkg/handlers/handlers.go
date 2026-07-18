@@ -6,6 +6,7 @@ import (
 	"github.com/IsaacDSC/featureflag/cmd/containers"
 	"github.com/IsaacDSC/featureflag/internal/auth"
 	"github.com/IsaacDSC/featureflag/internal/contenthub"
+	"github.com/IsaacDSC/featureflag/internal/dashboard"
 	"github.com/IsaacDSC/featureflag/internal/featureflag"
 	"github.com/IsaacDSC/featureflag/internal/health"
 )
@@ -26,6 +27,10 @@ func NewHandlers(services containers.ServiceContainer) map[string]func(w http.Re
 	}
 
 	for k, v := range contenthub.NewContenthubHandler(services.ContentHubService).GetRoutes() {
+		output[k] = v
+	}
+
+	for k, v := range dashboard.NewDashboardHandler().GetRoutes() {
 		output[k] = v
 	}
 
