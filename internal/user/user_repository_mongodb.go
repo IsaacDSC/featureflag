@@ -39,14 +39,80 @@ func (mr *MongoDBRepository) Create(ctx context.Context, input Entity) error {
 	defer cancel()
 
 	doc := bson.M{
-		id:           input.ID,
-		email:        input.Email,
-		passwordHash: input.PasswordHash,
-		createdAt:    input.CreatedAt,
+		"_id":              input.ID,
+		email:              input.Email,
+		passwordHash:       input.PasswordHash,
+		role:               input.Role,
+		projects:           input.Projects,
+		createdAt:          input.CreatedAt,
+		mustChangePassword: input.MustChangePassword,
 	}
 
 	_, err := mr.collection.InsertOne(ctx, doc)
 	return err
+}
+
+// Update altera só role/projects de um registro já existente — preserva
+// password_hash, id e created_at do que já estava salvo.
+func (mr *MongoDBRepository) Update(ctx context.Context, input Entity) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
+	defer cancel()
+
+	filter := bson.M{emailIndexModel.String(): input.Email}
+	update := bson.M{"$set": bson.M{role: input.Role, projects: input.Projects}}
+
+	result, err := mr.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errorutils.NewNotFoundError("user")
+	}
+
+	return nil
+}
+
+// UpdatePassword grava um novo hash de senha e limpa MustChangePassword —
+// preserva role/projects (mesmo espírito de Update).
+func (mr *MongoDBRepository) UpdatePassword(ctx context.Context, emailInput, passwordHashInput string) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
+	defer cancel()
+
+	filter := bson.M{emailIndexModel.String(): emailInput}
+	update := bson.M{"$set": bson.M{passwordHash: passwordHashInput, mustChangePassword: false}}
+
+	result, err := mr.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errorutils.NewNotFoundError("user")
+	}
+
+	return nil
+}
+
+// RequirePasswordChange marca um usuário já existente para trocar a senha
+// no próximo login — preserva password_hash/role/projects.
+func (mr *MongoDBRepository) RequirePasswordChange(ctx context.Context, emailInput string) error {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
+	defer cancel()
+
+	filter := bson.M{emailIndexModel.String(): emailInput}
+	update := bson.M{"$set": bson.M{mustChangePassword: true}}
+
+	result, err := mr.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	if result.MatchedCount == 0 {
+		return errorutils.NewNotFoundError("user")
+	}
+
+	return nil
 }
 
 func (mr *MongoDBRepository) GetByEmail(ctx context.Context, emailInput string) (Entity, error) {

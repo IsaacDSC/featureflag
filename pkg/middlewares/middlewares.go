@@ -28,7 +28,12 @@ const (
 	// POST /auth), lido tanto aqui quanto por internal/auth ao emitir o JWT.
 	SessionCookieName = "ff_session"
 
-	serviceAccountEmail = "service-account"
+	// ServiceAccountEmail é o valor sentinela gravado em EMAIL_KEY quando a
+	// requisição é autenticada via SERVICE_CLIENT_AT (automação), não por
+	// login humano — usado por quem consome EMAIL_KEY (ex.: trilha de
+	// auditoria, checagem de permissão por project) para reconhecer esse
+	// caso e tratá-lo como acesso irrestrito de máquina.
+	ServiceAccountEmail = "service-account"
 	loginRedirectPath   = "/auth/login"
 )
 
@@ -162,7 +167,7 @@ func RequireLogin(h http.HandlerFunc) http.HandlerFunc {
 func RequireServiceOrLogin(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if authorization := r.Header.Get("Authorization"); authorization != "" && authorization == env.Get().ServiceClientAT {
-			ctx := ctxutils.SetContext(r.Context(), EMAIL_KEY, serviceAccountEmail)
+			ctx := ctxutils.SetContext(r.Context(), EMAIL_KEY, ServiceAccountEmail)
 			h.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -288,7 +293,7 @@ func Logger(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-var sensitiveJSONFields = []string{"password", "password_hash"}
+var sensitiveJSONFields = []string{"password", "password_hash", "current_password", "new_password"}
 
 // redactSensitiveFields tenta decodificar rawBody como um objeto JSON e substitui
 // o valor de qualquer campo sensível de primeiro nível por um placeholder, antes

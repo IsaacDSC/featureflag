@@ -27,7 +27,7 @@ func NewHandlers(services containers.ServiceContainer) map[string]func(w http.Re
 		output[k] = v
 	}
 
-	for k, v := range featureflag.NewFeatureFlagHandler(services.FeatureFlagService).GetRoutes() {
+	for k, v := range featureflag.NewFeatureFlagHandler(services.FeatureFlagService, services.UserService).GetRoutes() {
 		output[k] = v
 	}
 

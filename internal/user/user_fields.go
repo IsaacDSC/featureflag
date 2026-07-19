@@ -1,8 +1,10 @@
 package user
 
 const (
-	id           = "id"
-	email        = "email"
-	passwordHash = "password_hash"
-	createdAt    = "created_at"
+	email              = "email"
+	passwordHash       = "password_hash"
+	role               = "role"
+	projects           = "projects"
+	createdAt          = "created_at"
+	mustChangePassword = "must_change_password"
 )

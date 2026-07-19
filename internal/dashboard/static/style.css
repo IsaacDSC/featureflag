@@ -229,6 +229,12 @@ main {
 
 .modal h3 { margin-top: 0; }
 
+.modal .hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin: -6px 0 14px;
+}
+
 .modal label {
   display: flex;
   flex-direction: column;
@@ -254,6 +260,40 @@ fieldset {
   margin: 0 0 14px;
 }
 
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.checkbox-list label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+  color: var(--text);
+}
+
+.checkbox-list label input { width: auto; }
+
+.checkbox-list .no-projects {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.access-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(91, 141, 239, 0.15);
+  color: var(--accent);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -277,6 +317,3 @@ fieldset {
   font-size: 18px;
 }
 
-.theme-fab {
-  bottom: 76px;
-}

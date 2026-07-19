@@ -23,18 +23,37 @@ func NewUserRepository() *Repository {
 // diretamente via encoding/json. record existe só para o jsonfile guardar
 // o hash corretamente, sem afetar o contrato de serialização HTTP da Entity.
 type record struct {
-	ID           uuid.UUID `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"password_hash"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID                 uuid.UUID `json:"id"`
+	Email              string    `json:"email"`
+	PasswordHash       string    `json:"password_hash"`
+	Role               string    `json:"role"`
+	Projects           []string  `json:"projects"`
+	CreatedAt          time.Time `json:"created_at"`
+	MustChangePassword bool      `json:"must_change_password"`
 }
 
 func toRecord(e Entity) record {
-	return record{ID: e.ID, Email: e.Email, PasswordHash: e.PasswordHash, CreatedAt: e.CreatedAt}
+	return record{
+		ID:                 e.ID,
+		Email:              e.Email,
+		PasswordHash:       e.PasswordHash,
+		Role:               e.Role,
+		Projects:           e.Projects,
+		CreatedAt:          e.CreatedAt,
+		MustChangePassword: e.MustChangePassword,
+	}
 }
 
 func (r record) toEntity() Entity {
-	return Entity{ID: r.ID, Email: r.Email, PasswordHash: r.PasswordHash, CreatedAt: r.CreatedAt}
+	return Entity{
+		ID:                 r.ID,
+		Email:              r.Email,
+		PasswordHash:       r.PasswordHash,
+		Role:               r.Role,
+		Projects:           r.Projects,
+		CreatedAt:          r.CreatedAt,
+		MustChangePassword: r.MustChangePassword,
+	}
 }
 
 type userStore map[string]record // email -> record
@@ -95,6 +114,66 @@ func (r Repository) GetByEmail(ctx context.Context, emailInput string) (Entity, 
 	}
 
 	return Entity{}, errorutils.NewNotFoundError("user")
+}
+
+// Update altera só role/projects de um registro já existente — preserva
+// password_hash, id e created_at do que já estava salvo.
+func (r Repository) Update(ctx context.Context, input Entity) error {
+	store, err := r.readStore()
+	if err != nil {
+		return err
+	}
+
+	existing, ok := store[input.Email]
+	if !ok {
+		return errorutils.NewNotFoundError("user")
+	}
+
+	existing.Role = input.Role
+	existing.Projects = input.Projects
+	store[input.Email] = existing
+
+	return r.writeStore(store)
+}
+
+// UpdatePassword grava um novo hash de senha e limpa MustChangePassword —
+// preserva role, projects, id e created_at do que já estava salvo.
+func (r Repository) UpdatePassword(ctx context.Context, emailInput, passwordHashInput string) error {
+	store, err := r.readStore()
+	if err != nil {
+		return err
+	}
+
+	existing, ok := store[emailInput]
+	if !ok {
+		return errorutils.NewNotFoundError("user")
+	}
+
+	existing.PasswordHash = passwordHashInput
+	existing.MustChangePassword = false
+	store[emailInput] = existing
+
+	return r.writeStore(store)
+}
+
+// RequirePasswordChange marca um usuário já existente para trocar a senha
+// no próximo login — preserva password_hash, role, projects, id e
+// created_at do que já estava salvo.
+func (r Repository) RequirePasswordChange(ctx context.Context, emailInput string) error {
+	store, err := r.readStore()
+	if err != nil {
+		return err
+	}
+
+	existing, ok := store[emailInput]
+	if !ok {
+		return errorutils.NewNotFoundError("user")
+	}
+
+	existing.MustChangePassword = true
+	store[emailInput] = existing
+
+	return r.writeStore(store)
 }
 
 func (r Repository) Delete(ctx context.Context, emailInput string) error {

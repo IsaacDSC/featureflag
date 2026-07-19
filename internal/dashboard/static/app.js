@@ -3,6 +3,7 @@
     project: null,
     flags: [],
     users: [],
+    availableProjects: [],
   };
 
   const $ = (id) => document.getElementById(id);
@@ -28,11 +29,17 @@
   const usersEmpty = $("users-empty");
   const newUserBtn = $("new-user-btn");
   const userModal = $("user-modal");
+  const userModalTitle = $("user-modal-title");
   const userForm = $("user-form");
   const userEmailInput = $("user-email");
+  const userPasswordRow = $("user-password-row");
   const userPasswordInput = $("user-password");
+  const userRoleSelect = $("user-role");
+  const userProjectsField = $("user-projects-field");
+  const userProjectsList = $("user-projects-list");
   const userFormError = $("user-form-error");
   const userModalCancel = $("user-modal-cancel");
+  const userFormSubmit = $("user-form-submit");
 
   const flagModal = $("flag-modal");
   const modalTitle = $("modal-title");
@@ -44,18 +51,19 @@
   const formError = $("form-error");
   const modalCancel = $("modal-cancel");
 
-  const settingsBtn = $("settings-btn");
-  const tokenModal = $("token-modal");
-  const tokenInput = $("service-token-input");
-  const tokenSave = $("token-save");
-  const tokenCancel = $("token-cancel");
-
   const themeToggleBtn = $("theme-toggle-btn");
 
-  const TOKEN_KEY = "ff_dashboard_service_token";
+  const forcePasswordModal = $("force-password-modal");
+  const forcePasswordForm = $("force-password-form");
+  const forceCurrentPasswordInput = $("force-current-password");
+  const forceNewPasswordInput = $("force-new-password");
+  const forceConfirmPasswordInput = $("force-confirm-password");
+  const forcePasswordError = $("force-password-error");
+
   const LAST_PROJECT_KEY = "ff_dashboard_last_project";
   const THEME_KEY = "ff_dashboard_theme";
   let editingFlagName = null;
+  let editingUserEmail = null;
 
   function systemPrefersDark() {
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -90,15 +98,6 @@
 
   applyTheme(localStorage.getItem(THEME_KEY));
 
-  function getServiceToken() {
-    return localStorage.getItem(TOKEN_KEY) || "";
-  }
-
-  function authHeaders() {
-    const token = getServiceToken();
-    return token ? { Authorization: token } : {};
-  }
-
   async function fetchJSON(url, options = {}) {
     const res = await fetch(url, options);
     if (!res.ok) {
@@ -114,8 +113,9 @@
   async function loadProjects() {
     try {
       const projects = await fetchJSON("/featureflag/projects");
+      state.availableProjects = projects || [];
       projectList.innerHTML = "";
-      (projects || []).forEach((p) => {
+      state.availableProjects.forEach((p) => {
         const opt = document.createElement("option");
         opt.value = p;
         projectList.appendChild(opt);
@@ -237,17 +237,9 @@
   async function deleteFlag(flag) {
     if (!confirm(`Delete flag "${flag.flag_name}"?`)) return;
 
-    const token = getServiceToken();
-    if (!token) {
-      alert("Set the service token (gear icon) to delete flags.");
-      openTokenModal();
-      return;
-    }
-
     try {
       await fetchJSON(`/featureflag/${encodeURIComponent(state.project)}/${encodeURIComponent(flag.flag_name)}`, {
         method: "DELETE",
-        headers: authHeaders(),
       });
       await loadFlags(state.project);
     } catch (e) {
@@ -303,15 +295,6 @@
     flagModal.classList.add("hidden");
   }
 
-  function openTokenModal() {
-    tokenInput.value = getServiceToken();
-    tokenModal.classList.remove("hidden");
-  }
-
-  function closeTokenModal() {
-    tokenModal.classList.add("hidden");
-  }
-
   function switchView(view) {
     const showUsers = view === "users";
     usersView.classList.toggle("hidden", !showUsers);
@@ -323,6 +306,12 @@
     if (showUsers) {
       loadUsers().catch((e) => console.warn("failed to load users", e));
     }
+  }
+
+  function accessDescription(user) {
+    if (user.role === "admin") return "Admin (all projects)";
+    const projects = user.projects || [];
+    return projects.length > 0 ? `Member: ${projects.join(", ")}` : "Member (no projects yet)";
   }
 
   function renderUsers() {
@@ -345,6 +334,13 @@
         emailTd.textContent = user.email;
         tr.appendChild(emailTd);
 
+        const accessTd = document.createElement("td");
+        const badge = document.createElement("span");
+        badge.className = "access-badge";
+        badge.textContent = accessDescription(user);
+        accessTd.appendChild(badge);
+        tr.appendChild(accessTd);
+
         const createdTd = document.createElement("td");
         createdTd.className = "strategy-desc";
         createdTd.textContent = user.created_at ? new Date(user.created_at).toLocaleString() : "";
@@ -352,6 +348,23 @@
 
         const actionsTd = document.createElement("td");
         actionsTd.className = "row-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.addEventListener("click", () => openEditUserModal(user));
+        actionsTd.appendChild(editBtn);
+
+        if (user.must_change_password) {
+          const pendingBadge = document.createElement("span");
+          pendingBadge.className = "access-badge";
+          pendingBadge.textContent = "Password change pending";
+          actionsTd.appendChild(pendingBadge);
+        } else {
+          const forceResetBtn = document.createElement("button");
+          forceResetBtn.textContent = "Force password reset";
+          forceResetBtn.addEventListener("click", () => forcePasswordReset(user));
+          actionsTd.appendChild(forceResetBtn);
+        }
 
         const deleteBtn = document.createElement("button");
         deleteBtn.textContent = "Delete";
@@ -370,6 +383,17 @@
     renderUsers();
   }
 
+  async function forcePasswordReset(user) {
+    if (!confirm(`Force "${user.email}" to change their password on next login?`)) return;
+
+    try {
+      await fetchJSON(`/users/${encodeURIComponent(user.email)}/require-password-change`, { method: "POST" });
+      await loadUsers();
+    } catch (e) {
+      alert(`Failed to force password reset: ${e.message}`);
+    }
+  }
+
   async function deleteUser(user) {
     if (!confirm(`Delete user "${user.email}"?`)) return;
 
@@ -381,11 +405,68 @@
     }
   }
 
+  function updateProjectsFieldVisibility() {
+    userProjectsField.classList.toggle("hidden", userRoleSelect.value === "admin");
+  }
+
+  function renderProjectCheckboxes(selectedProjects) {
+    const selected = new Set(selectedProjects || []);
+    userProjectsList.innerHTML = "";
+
+    if (state.availableProjects.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "no-projects";
+      empty.textContent = "No projects yet — create a feature flag for a project first.";
+      userProjectsList.appendChild(empty);
+      return;
+    }
+
+    state.availableProjects.forEach((project) => {
+      const label = document.createElement("label");
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.value = project;
+      checkbox.checked = selected.has(project);
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(project));
+      userProjectsList.appendChild(label);
+    });
+  }
+
+  function selectedProjectCheckboxes() {
+    return Array.from(userProjectsList.querySelectorAll("input[type=checkbox]:checked")).map((cb) => cb.value);
+  }
+
   function openNewUserModal() {
+    editingUserEmail = null;
+    userModalTitle.textContent = "New user";
+    userFormSubmit.textContent = "Create";
     userForm.reset();
+    userEmailInput.disabled = false;
+    userPasswordRow.classList.remove("hidden");
+    userPasswordInput.required = true;
+    userRoleSelect.value = "member";
+    renderProjectCheckboxes([]);
+    updateProjectsFieldVisibility();
     userFormError.classList.add("hidden");
     userModal.classList.remove("hidden");
     userEmailInput.focus();
+  }
+
+  function openEditUserModal(user) {
+    editingUserEmail = user.email;
+    userModalTitle.textContent = `Edit "${user.email}"`;
+    userFormSubmit.textContent = "Save";
+    userForm.reset();
+    userEmailInput.value = user.email;
+    userEmailInput.disabled = true;
+    userPasswordRow.classList.add("hidden");
+    userPasswordInput.required = false;
+    userRoleSelect.value = user.role === "admin" ? "admin" : "member";
+    renderProjectCheckboxes(user.projects);
+    updateProjectsFieldVisibility();
+    userFormError.classList.add("hidden");
+    userModal.classList.remove("hidden");
   }
 
   function closeUserModal() {
@@ -439,16 +520,6 @@
     }
   });
 
-  settingsBtn.addEventListener("click", openTokenModal);
-  tokenCancel.addEventListener("click", closeTokenModal);
-  tokenModal.addEventListener("click", (e) => {
-    if (e.target === tokenModal) closeTokenModal();
-  });
-  tokenSave.addEventListener("click", () => {
-    localStorage.setItem(TOKEN_KEY, tokenInput.value.trim());
-    closeTokenModal();
-  });
-
   logoutBtn.addEventListener("click", async () => {
     try {
       await fetchJSON("/auth/logout", { method: "POST" });
@@ -467,22 +538,34 @@
   userModal.addEventListener("click", (e) => {
     if (e.target === userModal) closeUserModal();
   });
+  userRoleSelect.addEventListener("change", updateProjectsFieldVisibility);
 
   userForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     userFormError.classList.add("hidden");
 
-    const payload = {
-      email: userEmailInput.value.trim(),
-      password: userPasswordInput.value,
-    };
+    const role = userRoleSelect.value;
+    const projects = role === "admin" ? [] : selectedProjectCheckboxes();
 
     try {
-      await fetchJSON("/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      if (editingUserEmail) {
+        await fetchJSON(`/users/${encodeURIComponent(editingUserEmail)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role, projects }),
+        });
+      } else {
+        await fetchJSON("/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: userEmailInput.value.trim(),
+            password: userPasswordInput.value,
+            role,
+            projects,
+          }),
+        });
+      }
       closeUserModal();
       await loadUsers();
     } catch (err) {
@@ -491,7 +574,16 @@
     }
   });
 
-  async function init() {
+  // applyCurrentUserUI is best effort only: the server is the real gate
+  // (403 on /users for non-admins) — this just avoids showing a tab that
+  // would 403.
+  function applyCurrentUserUI(me) {
+    if (me && me.role !== "admin") {
+      navUsersBtn.classList.add("hidden");
+    }
+  }
+
+  async function loadDashboard() {
     await loadProjects();
 
     const lastProject = localStorage.getItem(LAST_PROJECT_KEY);
@@ -504,6 +596,73 @@
       // best effort: fall back to the empty state if the remembered project is gone
       console.warn("failed to auto-load last project", e);
     }
+  }
+
+  function showForcePasswordModal() {
+    forcePasswordError.classList.add("hidden");
+    forcePasswordForm.reset();
+    forcePasswordModal.classList.remove("hidden");
+    forceCurrentPasswordInput.focus();
+  }
+
+  function hideForcePasswordModal() {
+    forcePasswordModal.classList.add("hidden");
+  }
+
+  // The dashboard itself stays behind the modal-backdrop (no cancel button,
+  // no close-on-backdrop-click) until this succeeds — every other route is
+  // also 403'd server-side (requirePasswordChanged) while must_change_password
+  // is true, so this is UX, not the actual security gate.
+  forcePasswordForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    forcePasswordError.classList.add("hidden");
+
+    if (forceNewPasswordInput.value !== forceConfirmPasswordInput.value) {
+      forcePasswordError.textContent = "New password and confirmation do not match.";
+      forcePasswordError.classList.remove("hidden");
+      return;
+    }
+
+    try {
+      await fetchJSON("/me/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: forceCurrentPasswordInput.value,
+          new_password: forceNewPasswordInput.value,
+        }),
+      });
+      hideForcePasswordModal();
+
+      let me = null;
+      try {
+        me = await fetchJSON("/me");
+      } catch (err) {
+        console.warn("failed to load current user", err);
+      }
+      applyCurrentUserUI(me);
+      await loadDashboard();
+    } catch (err) {
+      forcePasswordError.textContent = err.message;
+      forcePasswordError.classList.remove("hidden");
+    }
+  });
+
+  async function init() {
+    let me = null;
+    try {
+      me = await fetchJSON("/me");
+    } catch (e) {
+      console.warn("failed to load current user", e);
+    }
+
+    if (me && me.must_change_password) {
+      showForcePasswordModal();
+      return;
+    }
+
+    applyCurrentUserUI(me);
+    await loadDashboard();
   }
 
   init();
