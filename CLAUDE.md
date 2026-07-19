@@ -19,9 +19,10 @@ go build -v ./...            # build everything
 go test ./... --race         # full test suite (matches CI)
 go test ./internal/featureflag -run TestName   # single package / single test
 docker-compose up -d         # full stack: app + MongoDB + mongo-express (:8081)
+make ci                      # run the same validations as CI locally (fmt, test, build, govulncheck)
 ```
 
-There is no separate lint step in CI; CI (`.github/workflows/ci.yml`, Go 1.22) runs `go mod tidy`, `go test ./... --race`, `go build`, then builds/pushes the Docker image.
+CI (`.github/workflows/ci.yml`, Go 1.25) runs on pull requests and pushes to `main`/`master`/`develop`: `gofmt` check, `go test ./... --race`, `go build`, `govulncheck`. On push to `main` it additionally builds/pushes the Docker image, tagged `isaacdsc/featureflag:{short commit sha}`.
 
 `loadtest/simple` and `loadtest/changed_status` are **separate Go modules** — `cd` into them before running/building; `go test ./...` at the root does not include them.
 
