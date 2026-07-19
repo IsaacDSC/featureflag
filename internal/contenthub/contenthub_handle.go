@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
 type ContenthubHandler struct {
@@ -17,11 +19,11 @@ func NewContenthubHandler(service *Service) *ContenthubHandler {
 	handler := new(ContenthubHandler)
 	handler.service = service
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("PATCH %s", contenthubRouterPrefix):         handler.patchContenthub,    //middlewares.Authorization(middlewares.CheckPermission(handler.patchContenthub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("DELETE %s/{key}", contenthubRouterPrefix):  handler.deleteContenthub,   //middlewares.Authorization(middlewares.CheckPermission(handler.deleteContenthub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %ss", contenthubRouterPrefix):          handler.getAllContenthub,   //middlewares.Authorization(middlewares.CheckPermission(handler.getAllContenthub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s/{key}", contenthubRouterPrefix):     handler.getContentHub,      //middlewares.Authentication(middlewares.CheckPermission(handler.getContentHub, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s/sdk/{key}", contenthubRouterPrefix): handler.getContentHubBySDK, //middlewares.Authentication(middlewares.CheckPermission(handler.getContentHubBySDK, middlewares.USERNAME_SDK)),
+		fmt.Sprintf("PATCH %s", contenthubRouterPrefix):         middlewares.RequireServiceOrLogin(handler.patchContenthub),
+		fmt.Sprintf("DELETE %s/{key}", contenthubRouterPrefix):  middlewares.RequireServiceOrLogin(handler.deleteContenthub),
+		fmt.Sprintf("GET %ss", contenthubRouterPrefix):          middlewares.RequireServiceOrLogin(handler.getAllContenthub),
+		fmt.Sprintf("GET %s/{key}", contenthubRouterPrefix):     middlewares.RequireServiceOrLogin(handler.getContentHub),
+		fmt.Sprintf("GET %s/sdk/{key}", contenthubRouterPrefix): handler.getContentHubBySDK,
 	}
 
 	return handler

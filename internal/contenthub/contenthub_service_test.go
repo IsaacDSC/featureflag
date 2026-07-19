@@ -66,6 +66,7 @@ func TestContentHubService_CreateOrUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ch := Service{
 				repository: repository,
+				auditor:    noopAuditor{},
 			}
 			tt.behavior(tt.contenthub)
 			if err := ch.CreateOrUpdate(context.Background(), tt.contenthub); (err != nil) != tt.wantErr {
@@ -105,13 +106,14 @@ func TestContentHubService_RemoveContentHub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := Service{
-				repository: repository,
-			}
-			tt.behavior(tt.key)
-			if err := ch.RemoveContentHub(context.Background(), tt.key); (err != nil) != tt.wantErr {
-				t.Errorf("RemoveContentHub() error = %v, wantErr %v", err, tt.wantErr)
-			}
+		ch := Service{
+			repository: repository,
+			auditor:    noopAuditor{},
+		}
+		tt.behavior(tt.key)
+		if err := ch.RemoveContentHub(context.Background(), tt.key); (err != nil) != tt.wantErr {
+			t.Errorf("RemoveContentHub() error = %v, wantErr %v", err, tt.wantErr)
+		}
 		})
 	}
 }
@@ -153,11 +155,12 @@ func TestContentHubService_GetAllContentHub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := Service{
-				repository: repository,
-			}
-			tt.behavior()
-			got, err := ch.GetAllContentHub(context.Background())
+		ch := Service{
+			repository: repository,
+			auditor:    noopAuditor{},
+		}
+		tt.behavior()
+		got, err := ch.GetAllContentHub(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetAllContentHub() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -203,11 +206,12 @@ func TestContentHubService_GetContentHub(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ch := Service{
-				repository: repository,
-			}
-			tt.behavior(tt.key)
-			got, err := ch.GetContentHub(context.Background(), tt.key)
+		ch := Service{
+			repository: repository,
+			auditor:    noopAuditor{},
+		}
+		tt.behavior(tt.key)
+		got, err := ch.GetContentHub(context.Background(), tt.key)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetContentHub() error = %v, wantErr %v", err, tt.wantErr)
 				return

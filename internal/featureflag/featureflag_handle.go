@@ -1,30 +1,46 @@
 package featureflag
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
+	"github.com/IsaacDSC/featureflag/pkg/ctxutils"
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
 	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 )
 
+// ProjectAccessChecker decide se o usuário identificado por email pode
+// acessar project. Satisfeita por *user.Service (admin sempre pode; membro
+// só nos projects liberados para ele).
+type ProjectAccessChecker interface {
+	HasProjectAccess(ctx context.Context, email, project string) (bool, error)
+	// MustChangePassword reporta se email ainda não trocou a senha do
+	// primeiro acesso — usado por requirePasswordChanged para bloquear as
+	// rotas de feature flag até essa troca acontecer.
+	MustChangePassword(ctx context.Context, email string) (bool, error)
+}
+
 type Handler struct {
 	routes  map[string]func(w http.ResponseWriter, r *http.Request)
 	service *Service
+	checker ProjectAccessChecker
 }
 
 const featureFlagPrefix = "/featureflag/{project}"
 
-func NewFeatureFlagHandler(service *Service) *Handler {
+func NewFeatureFlagHandler(service *Service, checker ProjectAccessChecker) *Handler {
 	handler := new(Handler)
 	handler.service = service
+	handler.checker = checker
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		fmt.Sprintf("PATCH %s", featureFlagPrefix):         handler.createOrUpdate,
-		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.Authorization(middlewares.CheckPermission(handler.delete, middlewares.USERNAME_SERVICE)),
-		fmt.Sprintf("GET %s/all", featureFlagPrefix):       handler.getAll,
-		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.Authorization(middlewares.CheckPermission(handler.get, middlewares.USERNAME_SERVICE)),
+		"GET /featureflag/projects":                        middlewares.RequireServiceOrLogin(handler.requirePasswordChanged(handler.listProjects)),
+		fmt.Sprintf("PATCH %s", featureFlagPrefix):         middlewares.RequireServiceOrLogin(handler.requirePasswordChanged(handler.requireProjectAccess(handler.createOrUpdate))),
+		fmt.Sprintf("DELETE %s/{key}", featureFlagPrefix):  middlewares.RequireServiceOrLogin(handler.requirePasswordChanged(handler.requireProjectAccess(handler.delete))),
+		fmt.Sprintf("GET %s/all", featureFlagPrefix):       middlewares.RequireServiceOrLogin(handler.requirePasswordChanged(handler.requireProjectAccess(handler.getAll))),
+		fmt.Sprintf("GET %s/{key}", featureFlagPrefix):     middlewares.RequireServiceOrLogin(handler.requirePasswordChanged(handler.requireProjectAccess(handler.get))),
 		fmt.Sprintf("GET %s/sdk/{key}", featureFlagPrefix): middlewares.Authorization(middlewares.CheckPermission(handler.getFeatureFlagBySDK, middlewares.USERNAME_SDK)),
 	}
 
@@ -33,6 +49,62 @@ func NewFeatureFlagHandler(service *Service) *Handler {
 
 func (h *Handler) GetRoutes() map[string]func(w http.ResponseWriter, r *http.Request) {
 	return h.routes
+}
+
+// requireProjectAccess exige que o usuário identificado por RequireLogin (ou
+// pelo token de serviço, via RequireServiceOrLogin) tenha permissão sobre o
+// project da própria URL. Chamadas via SERVICE_CLIENT_AT (email sentinela
+// middlewares.ServiceAccountEmail) continuam irrestritas, como já eram antes
+// desta checagem existir — automação não é escopada por project.
+func (h *Handler) requireProjectAccess(inner http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		emailValue, _ := ctxutils.GetValueCtx(r.Context(), middlewares.EMAIL_KEY).(string)
+		if emailValue == middlewares.ServiceAccountEmail {
+			inner(w, r)
+			return
+		}
+
+		project := r.PathValue("project")
+		ok, err := h.checker.HasProjectAccess(r.Context(), emailValue, project)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if !ok {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("no access to this project"))
+			return
+		}
+
+		inner(w, r)
+	}
+}
+
+// requirePasswordChanged bloqueia rotas de feature flag para um usuário que
+// ainda não trocou a senha do primeiro acesso (mesmo critério de
+// requireProjectAccess: contas de serviço, sem usuário humano por trás,
+// ficam de fora dessa checagem).
+func (h *Handler) requirePasswordChanged(inner http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		emailValue, _ := ctxutils.GetValueCtx(r.Context(), middlewares.EMAIL_KEY).(string)
+		if emailValue == middlewares.ServiceAccountEmail {
+			inner(w, r)
+			return
+		}
+
+		must, err := h.checker.MustChangePassword(r.Context(), emailValue)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if must {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte("password change required"))
+			return
+		}
+
+		inner(w, r)
+	}
 }
 
 func (h *Handler) createOrUpdate(w http.ResponseWriter, r *http.Request) {
@@ -135,6 +207,7 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(output)
 }
@@ -177,6 +250,56 @@ func (h *Handler) getFeatureFlagBySDK(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`{"status": "%t"}`, statusFF)))
 }
 
+// filterAccessibleProjects reduz projects à sublista que emailValue pode
+// acessar (contas de serviço veem tudo, sem filtro — mesmo critério de
+// requireProjectAccess).
+func (h *Handler) filterAccessibleProjects(ctx context.Context, emailValue string, projects []string) ([]string, error) {
+	if emailValue == middlewares.ServiceAccountEmail {
+		return projects, nil
+	}
+
+	filtered := make([]string, 0, len(projects))
+	for _, project := range projects {
+		ok, err := h.checker.HasProjectAccess(ctx, emailValue, project)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			filtered = append(filtered, project)
+		}
+	}
+	return filtered, nil
+}
+
+func (h *Handler) listProjects(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	projects, err := h.service.ListProjects(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	emailValue, _ := ctxutils.GetValueCtx(ctx, middlewares.EMAIL_KEY).(string)
+	projects, err = h.filterAccessibleProjects(ctx, emailValue, projects)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	b, err := json.Marshal(projects)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+}
+
 func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -208,6 +331,7 @@ func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
 }

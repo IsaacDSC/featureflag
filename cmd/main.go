@@ -11,6 +11,7 @@ import (
 
 	"github.com/IsaacDSC/featureflag/cmd/containers"
 	"github.com/IsaacDSC/featureflag/internal/env"
+	"github.com/IsaacDSC/featureflag/internal/user"
 	"github.com/IsaacDSC/featureflag/pkg/handlers"
 	"github.com/IsaacDSC/featureflag/pkg/middlewares"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -61,6 +62,8 @@ func main() {
 
 	services := containers.NewServiceContainer(repositories)
 
+	seedAdminUsers(context.Background(), services.UserService, environment.AdminUsers)
+
 	mux := http.NewServeMux()
 	handlers := handlers.NewHandlers(services)
 	for path, handler := range handlers {
@@ -94,4 +97,26 @@ func main() {
 	}
 
 	log.Print("[*] Server stopped")
+}
+
+// seedAdminUsers cria os usuários de ADMIN_USERS somente se a coleção/arquivo
+// de usuários estiver vazio (bootstrap do primeiro usuário — spec 003 §4.2).
+// Uma vez que exista pelo menos um usuário, ADMIN_USERS é ignorado em
+// deploys subsequentes, mesmo que continue preenchido.
+func seedAdminUsers(ctx context.Context, users *user.Service, seed map[string]string) {
+	existing, err := users.List(ctx)
+	if err != nil {
+		log.Fatalf("failed to check existing users: %v", err)
+	}
+
+	if len(existing) > 0 {
+		return
+	}
+
+	for email, hash := range seed {
+		if err := users.Seed(ctx, email, hash); err != nil {
+			log.Fatalf("failed to seed admin user %s: %v", email, err)
+		}
+		log.Printf("[bootstrap] seeded admin user via ADMIN_USERS: %s", email)
+	}
 }

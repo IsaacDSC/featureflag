@@ -25,12 +25,16 @@ func CreateToken(data any) (string, error) {
 	return tokenString, nil
 }
 
+func verifyingKeyFunc(token *jwt.Token) (any, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+	}
+
+	return []byte(env.Get().SecretKey), nil
+}
+
 func VerifyToken(tokenString string) error {
-	cfg := env.Get()
-	secretKey := []byte(cfg.SecretKey)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
-	})
+	token, err := jwt.Parse(tokenString, verifyingKeyFunc)
 
 	if err != nil {
 		return err
@@ -44,11 +48,7 @@ func VerifyToken(tokenString string) error {
 }
 
 func GetDataJWT(tokenString string) (any, error) {
-	cfg := env.Get()
-	secretKey := []byte(cfg.SecretKey)
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
-	})
+	token, err := jwt.Parse(tokenString, verifyingKeyFunc)
 
 	if err != nil {
 		return nil, err

@@ -102,6 +102,7 @@ func TestFeatureflagService_CreateOrUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			repo := Service{
 				repository: tt.fields.repository,
+				auditor:    noopAuditor{},
 			}
 			tt.args.behavior(tt.args.featureflag)
 			if err := repo.CreateOrUpdate(context.Background(), "proj-a", tt.args.featureflag); (err != nil) != tt.wantErr {
@@ -252,6 +253,7 @@ func TestFeatureflagService_GetFeatureFlag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ff := Service{
 				repository: tt.fields.repository,
+				auditor:    noopAuditor{},
 			}
 
 			tt.args.behavior(tt.args.key, tt.args.sessionID, tt.want)
