@@ -3,6 +3,7 @@ package featureflag
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/IsaacDSC/featureflag/pkg/errorutils"
@@ -104,6 +105,27 @@ func (mr *MongoDBRepository) GetAllFF(ctx context.Context, project string) (map[
 	}
 
 	return result, nil
+}
+
+func (mr *MongoDBRepository) ListProjects(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, mr.timeout)
+	defer cancel()
+
+	results, err := mr.collection.Distinct(ctx, projectIndexModel.String(), bson.M{})
+	if err != nil {
+		return nil, err
+	}
+
+	projects := make([]string, 0, len(results))
+	for _, result := range results {
+		if project, ok := result.(string); ok {
+			projects = append(projects, project)
+		}
+	}
+
+	sort.Strings(projects)
+
+	return projects, nil
 }
 
 func (mr *MongoDBRepository) DeleteFF(ctx context.Context, project, key string) error {

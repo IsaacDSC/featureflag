@@ -46,6 +46,9 @@ services:
       - SECRET_KEY=secret
       - SERVICE_CLIENT_AT=service
       - SDK_CLIENT_AT=sdk
+      # admin@example.com / senha: admin (apenas para desenvolvimento local).
+      # "$$" escapa o "$" da interpolação do próprio docker-compose (spec 003 §4.2).
+      - ADMIN_USERS=admin@example.com:$$2a$$10$$6/oR1gXPk4QWpxNUcyTfz.fguFrPR.vplqcNERFZz0N2p1/iFFrZO
       - PORT=3000
     depends_on:
       mongodb:

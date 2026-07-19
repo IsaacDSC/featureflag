@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feature Flag Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Feature Flags</h1>
+    <div class="topbar-actions">
+      <nav class="view-nav">
+        <button id="nav-flags-btn" type="button" class="nav-btn active">Flags</button>
+        <button id="nav-users-btn" type="button" class="nav-btn">Users</button>
+      </nav>
+      <div id="project-picker" class="project-picker">
+        <input id="project-input" list="project-list" placeholder="project (e.g.: checkout-web)" autocomplete="off" />
+        <datalist id="project-list"></datalist>
+        <button id="load-btn" type="button">Load</button>
+      </div>
+      <button id="logout-btn" type="button" title="Sign out">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="flags-view">
+      <section id="empty-state" class="empty-state">
+        <p>Enter or select a project above to view and manage its feature flags.</p>
+      </section>
+
+      <section id="board" class="board hidden">
+        <div class="board-header">
+          <h2 id="board-project"></h2>
+          <button id="new-flag-btn" type="button" class="primary">+ New flag</button>
+        </div>
+
+        <table id="flags-table">
+          <thead>
+            <tr>
+              <th>Flag</th>
+              <th>Status</th>
+              <th>Strategy</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="flags-tbody"></tbody>
+        </table>
+
+        <p id="flags-empty" class="flags-empty hidden">No feature flags registered for this project yet.</p>
+      </section>
+    </section>
+
+    <section id="users-view" class="board hidden">
+      <div class="board-header">
+        <h2>Users</h2>
+        <button id="new-user-btn" type="button" class="primary">+ New user</button>
+      </div>
+
+      <table id="users-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Access</th>
+            <th>Created</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+
+      <p id="users-empty" class="flags-empty hidden">No users registered yet.</p>
+    </section>
+  </main>
+
+  <div id="flag-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3 id="modal-title">New feature flag</h3>
+      <form id="flag-form">
+        <label>
+          Flag name
+          <input id="flag-name" name="flag_name" required pattern="[a-zA-Z0-9_-]+" placeholder="e.g.: new-checkout" />
+        </label>
+
+        <label class="checkbox-row">
+          <input id="flag-active" name="active" type="checkbox" />
+          Active
+        </label>
+
+        <fieldset>
+          <legend>Rollout strategy (optional)</legend>
+          <label>
+            Rollout percentage (0-100)
+            <input id="flag-percent" name="percent" type="number" min="0" max="100" step="1" />
+          </label>
+          <label>
+            Session IDs (comma-separated)
+            <input id="flag-sessions" name="sessions" placeholder="session-a, session-b" />
+          </label>
+        </fieldset>
+
+        <p id="form-error" class="form-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="modal-cancel">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="user-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3 id="user-modal-title">New user</h3>
+      <form id="user-form">
+        <label>
+          Email
+          <input id="user-email" name="email" type="email" required autocomplete="off" />
+        </label>
+        <label id="user-password-row">
+          Password
+          <input id="user-password" name="password" type="password" minlength="1" autocomplete="new-password" />
+        </label>
+
+        <label>
+          Role
+          <select id="user-role">
+            <option value="member">Member (access limited to selected projects)</option>
+            <option value="admin">Admin (full access, manages users)</option>
+          </select>
+        </label>
+
+        <fieldset id="user-projects-field">
+          <legend>Project access</legend>
+          <div id="user-projects-list" class="checkbox-list"></div>
+        </fieldset>
+
+        <p id="user-form-error" class="form-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="button" id="user-modal-cancel">Cancel</button>
+          <button type="submit" id="user-form-submit" class="primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <button id="theme-toggle-btn" class="settings-fab theme-fab" type="button" title="Toggle light/dark theme"></button>
+
+  <div id="force-password-modal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h3>Change your password</h3>
+      <p class="hint">This is your first login (or an admin reset your password). You must set a new password before continuing.</p>
+      <form id="force-password-form">
+        <label>
+          Current password
+          <input id="force-current-password" name="current_password" type="password" required autocomplete="current-password" />
+        </label>
+        <label>
+          New password
+          <input id="force-new-password" name="new_password" type="password" required autocomplete="new-password" />
+        </label>
+        <label>
+          Confirm new password
+          <input id="force-confirm-password" name="confirm_password" type="password" required autocomplete="new-password" />
+        </label>
+
+        <p class="hint">Minimum 8 characters, with at least one uppercase letter, one lowercase letter, one digit and one special character.</p>
+
+        <p id="force-password-error" class="form-error hidden"></p>
+
+        <div class="modal-actions">
+          <button type="submit" class="primary">Change password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

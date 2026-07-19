@@ -6,8 +6,10 @@ import (
 	"github.com/IsaacDSC/featureflag/cmd/containers"
 	"github.com/IsaacDSC/featureflag/internal/auth"
 	"github.com/IsaacDSC/featureflag/internal/contenthub"
+	"github.com/IsaacDSC/featureflag/internal/dashboard"
 	"github.com/IsaacDSC/featureflag/internal/featureflag"
 	"github.com/IsaacDSC/featureflag/internal/health"
+	"github.com/IsaacDSC/featureflag/internal/user"
 )
 
 func NewHandlers(services containers.ServiceContainer) map[string]func(w http.ResponseWriter, r *http.Request) {
@@ -17,15 +19,23 @@ func NewHandlers(services containers.ServiceContainer) map[string]func(w http.Re
 		output[k] = v
 	}
 
-	for k, v := range auth.NewAuthHandler().GetRoutes() {
+	for k, v := range auth.NewAuthHandler(services.UserService).GetRoutes() {
 		output[k] = v
 	}
 
-	for k, v := range featureflag.NewFeatureFlagHandler(services.FeatureFlagService).GetRoutes() {
+	for k, v := range user.NewUserHandler(services.UserService).GetRoutes() {
+		output[k] = v
+	}
+
+	for k, v := range featureflag.NewFeatureFlagHandler(services.FeatureFlagService, services.UserService).GetRoutes() {
 		output[k] = v
 	}
 
 	for k, v := range contenthub.NewContenthubHandler(services.ContentHubService).GetRoutes() {
+		output[k] = v
+	}
+
+	for k, v := range dashboard.NewDashboardHandler().GetRoutes() {
 		output[k] = v
 	}
 

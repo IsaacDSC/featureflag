@@ -1,9 +1,11 @@
 package authutils
 
 import (
-	"github.com/IsaacDSC/featureflag/internal/env"
-	"github.com/google/uuid"
 	"testing"
+
+	"github.com/IsaacDSC/featureflag/internal/env"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 func TestCreateToken(t *testing.T) {
@@ -63,5 +65,25 @@ func TestCreateToken(t *testing.T) {
 				t.Errorf("CreateToken() invalid token")
 			}
 		})
+	}
+}
+
+// TestVerifyToken_RejectsAlgNone é um teste de regressão para a correção do
+// "algorithm confusion": VerifyToken deve rejeitar um token assinado com
+// alg=none, mesmo que o payload/claims sejam idênticos a um token válido.
+func TestVerifyToken_RejectsAlgNone(t *testing.T) {
+	env.Override(env.Environment{SecretKey: "82244db2-4346-4560-a768-14bf12aa5b81"})
+
+	token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims{
+		"data": "isaacdsc",
+	})
+
+	tokenString, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType)
+	if err != nil {
+		t.Fatalf("failed to build alg=none token: %v", err)
+	}
+
+	if err := VerifyToken(tokenString); err == nil {
+		t.Error("VerifyToken() accepted a token signed with alg=none, want an error")
 	}
 }

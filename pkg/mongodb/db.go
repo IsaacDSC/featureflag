@@ -54,3 +54,16 @@ func CreateUniqueCompoundIndex(collection *mongo.Collection, fields ...IndexMode
 	_, err := collection.Indexes().CreateOne(ctx, idxModel)
 	return err
 }
+
+// CreateIndex creates a non-unique index on the collection with timeout of 2 seconds.
+func CreateIndex(collection *mongo.Collection, indexModel IndexModel) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	idxModel := mongo.IndexModel{
+		Keys: bson.M{indexModel.String(): 1},
+	}
+
+	_, err := collection.Indexes().CreateOne(ctx, idxModel)
+	return err
+}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in — Feature Flag Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="login-card">
+    <h1>Feature Flags</h1>
+    <p class="subtitle">Sign in to manage feature flags and content hub.</p>
+
+    <form id="login-form">
+      <label>
+        Email
+        <input id="email" name="email" type="email" required autocomplete="username" />
+      </label>
+      <label>
+        Password
+        <input id="password" name="password" type="password" required autocomplete="current-password" />
+      </label>
+
+      <p id="form-error" class="form-error hidden"></p>
+
+      <button type="submit" class="primary">Sign in</button>
+    </form>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>
