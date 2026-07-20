@@ -25,7 +25,9 @@ func NewDashboardHandler() *Handler {
 
 	handler := new(Handler)
 	handler.routes = map[string]func(w http.ResponseWriter, r *http.Request){
-		"GET /dashboard":  func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/dashboard/", http.StatusMovedPermanently) },
+		"GET /dashboard": func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/dashboard/", http.StatusMovedPermanently)
+		},
 		"GET /dashboard/": middlewares.RequireLogin(fileServer.ServeHTTP),
 	}
 

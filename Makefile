@@ -3,7 +3,7 @@
 # Carrega variáveis do .env (se existir) para os targets que sobem a aplicação.
 ENV_FILE ?= .env
 
-.PHONY: help run build test tidy infra-up infra-down docker-up docker-down logs
+.PHONY: help run build test tidy fmt vulncheck ci infra-up infra-down docker-up docker-down logs
 
 help: ## Lista os comandos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,6 +26,20 @@ test: ## Roda a suíte de testes com o race detector
 
 tidy: ## Ajusta o go.mod/go.sum
 	go mod tidy
+
+fmt: ## Verifica se o código está formatado (gofmt)
+	@fmt_out="$$(gofmt -l .)"; \
+	if [ -n "$$fmt_out" ]; then \
+		echo "Arquivos não formatados:"; \
+		echo "$$fmt_out"; \
+		exit 1; \
+	fi
+
+vulncheck: ## Roda o govulncheck (instala se necessário)
+	@command -v govulncheck >/dev/null 2>&1 || go install golang.org/x/vuln/cmd/govulncheck@latest
+	govulncheck ./...
+
+ci: fmt test build vulncheck ## Roda localmente as mesmas validações do CI
 
 infra-up: ## Sobe apenas as dependências (MongoDB)
 	docker-compose up -d mongodb

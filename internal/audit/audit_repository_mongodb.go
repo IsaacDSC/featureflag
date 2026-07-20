@@ -16,7 +16,7 @@ type MongoDBRepository struct {
 }
 
 const (
-	collectionName    = mongodb.CollectionName("audit_log")
+	collectionName      = mongodb.CollectionName("audit_log")
 	createdAtIndexModel = mongodb.IndexModel("created_at")
 )
 

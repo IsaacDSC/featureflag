@@ -1,8 +1,8 @@
 module github.com/IsaacDSC/featureflag
 
-go 1.22.0
+go 1.25.0
 
-toolchain go1.22.1
+toolchain go1.26.5
 
 require github.com/google/uuid v1.6.0
 
@@ -29,6 +29,6 @@ require (
 )
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	golang.org/x/crypto v0.26.0
 )

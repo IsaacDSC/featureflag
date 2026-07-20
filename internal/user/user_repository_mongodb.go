@@ -17,7 +17,7 @@ type MongoDBRepository struct {
 }
 
 const (
-	collectionName = mongodb.CollectionName("users")
+	collectionName  = mongodb.CollectionName("users")
 	emailIndexModel = mongodb.IndexModel("email")
 )
 

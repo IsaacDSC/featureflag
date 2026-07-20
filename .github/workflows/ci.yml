@@ -1,25 +1,36 @@
-name: Go CI
+name: CI
 
 on:
+  pull_request:
+    branches: [main, master, develop]
   push:
-    branches:
-      - main
+    branches: [main, master, develop]
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.22
+          go-version-file: go.mod
+          cache: true
 
-      - name: Install dependencies
-        run: go mod tidy
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Check gofmt
+        run: |
+          fmt_out="$(gofmt -l .)"
+          if [ -n "$fmt_out" ]; then
+            echo "The following files are not gofmt'ed:"
+            echo "$fmt_out"
+            exit 1
+          fi
 
       - name: Run tests
         run: go test ./... --race
@@ -27,11 +38,29 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  docker:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
+      - name: Set image tag
+        id: vars
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Build Docker image
-        run: docker build -t isaacdsc/management_deployment:latest .
+        run: docker build -t isaacdsc/featureflag:${{ steps.vars.outputs.tag }} .
 
       - name: Push Docker image
-        run: docker push isaacdsc/management_deployment:latest
+        run: docker push isaacdsc/featureflag:${{ steps.vars.outputs.tag }}
