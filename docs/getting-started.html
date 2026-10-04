@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Começar · featureflag</title>
+    <meta name="description" content="Como subir o servidor featureflag e integrar o SDK Go." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,550;0,9..40,650;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/site.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true"></span>
+          featureflag
+        </a>
+        <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Abrir menu">☰</button>
+        <ul class="nav__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="getting-started.html" aria-current="page">Docs</a></li>
+          <li><a href="feature-flags.html">Flags</a></li>
+          <li><a href="content-hub.html">Content Hub</a></li>
+          <li>
+            <a class="nav__cta" href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="wrap docs-layout">
+      <aside class="docs-side">
+        <h2>Documentação</h2>
+        <ul>
+          <li><a href="getting-started.html" aria-current="page">Começar</a></li>
+          <li><a href="feature-flags.html">Feature Flags</a></li>
+          <li><a href="content-hub.html">Content Hub</a></li>
+          <li><a href="architecture.html">Arquitetura</a></li>
+        </ul>
+      </aside>
+
+      <article class="docs-main">
+        <h1>Começar</h1>
+        <p class="lead">
+          Suba o servidor, configure as variáveis obrigatórias e integre o SDK Go na sua aplicação.
+        </p>
+
+        <div class="steps">
+          <div class="step">
+            <div>
+              <h3>Clone e ambiente</h3>
+              <p>Copie o exemplo de env e preencha as chaves. O servidor falha no startup se faltar alguma.</p>
+              <div class="code">
+                <div class="code__bar">
+                  <span>shell</span>
+                  <button type="button" class="code__copy" data-copy="#env-cmd">Copiar</button>
+                </div>
+                <pre id="env-cmd">cp .env_example .env
+
+<span class="tok-cm"># obrigatórias</span>
+SECRET_KEY=...
+SERVICE_CLIENT_AT=...
+SDK_CLIENT_AT=...
+
+<span class="tok-cm"># persistência</span>
+REPOSITORY_TYPE=mongodb   <span class="tok-cm"># ou jsonfile</span>
+MONGODB_URI=mongodb://admin:password@localhost:27017
+MONGODB_NAME=featureflag</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div>
+              <h3>Suba o stack</h3>
+              <p>Com Docker você sobe app + MongoDB. Sem Docker: <code>go run ./cmd</code> (porta <code>:3000</code>).</p>
+              <div class="code">
+                <div class="code__bar">
+                  <span>shell</span>
+                  <button type="button" class="code__copy" data-copy="#up-cmd">Copiar</button>
+                </div>
+                <pre id="up-cmd">docker-compose up -d
+<span class="tok-cm"># http://localhost:3000</span></pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div>
+              <h3>Instale o SDK</h3>
+              <div class="code">
+                <div class="code__bar">
+                  <span>shell</span>
+                  <button type="button" class="code__copy" data-copy="#sdk-cmd">Copiar</button>
+                </div>
+                <pre id="sdk-cmd">go get -u github.com/IsaacDSC/featureflag</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="step">
+            <div>
+              <h3>Crie uma flag e leia no SDK</h3>
+              <div class="code">
+                <div class="code__bar"><span>curl</span></div>
+                <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+  -H "Content-Type: application/json" \
+  -d '{"flag_name":"checkout_v2","description":"novo checkout","active":true}'</pre>
+              </div>
+              <div class="code">
+                <div class="code__bar"><span>Go</span></div>
+                <pre>ff := featureflag.NewFeatureFlagSDK(<span class="tok-str">"http://localhost:3000"</span>, <span class="tok-str">"checkout"</span>)
+go ff.Listenner(ctx)
+
+if ff.GetFeatureFlag(<span class="tok-str">"checkout_v2"</span>).Val() {
+  <span class="tok-cm">// feature ligada</span>
+}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Autenticação</h2>
+        <p>
+          Tokens estáticos no header <code>Authorization</code>:
+          <code>SERVICE_CLIENT_AT</code> para escrita/admin e
+          <code>SDK_CLIENT_AT</code> para rotas <code>/sdk/{key}</code>.
+        </p>
+
+        <h2>Próximos passos</h2>
+        <ul>
+          <li><a href="feature-flags.html">Tipos de flag e rotas da API</a></li>
+          <li><a href="content-hub.html">Content Hub e estratégias</a></li>
+          <li><a href="architecture.html">Arquitetura e fluxo de polling</a></li>
+        </ul>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <span>featureflag · docs</span>
+        <a href="index.html">← Voltar à home</a>
+      </div>
+    </footer>
+    <script src="assets/js/site.js"></script>
+  </body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>featureflag — deploy tranquilo, this is fine</title>
+    <meta
+      name="description"
+      content="Feature flags em Go para deploy com tranquilidade e segurança. SDK com cache local, rollouts graduais e Content Hub."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,550;0,9..40,650;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/site.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <a class="brand" href="index.html" aria-current="page">
+          <span class="brand__mark" aria-hidden="true"></span>
+          featureflag
+        </a>
+        <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Abrir menu">☰</button>
+        <ul class="nav__links">
+          <li><a href="#fine">This is fine</a></li>
+          <li><a href="#cap">CAP</a></li>
+          <li><a href="getting-started.html">Docs</a></li>
+          <li>
+            <a class="nav__cta" href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero wrap">
+        <div class="hero__plane" aria-hidden="true"></div>
+        <div class="hero__meme" aria-hidden="true">
+          <img
+            src="assets/img/this-is-fine-gopher.jpg"
+            alt=""
+            width="1200"
+            height="675"
+          />
+        </div>
+
+        <div class="hero__content">
+          <p class="brand-hero">feature<span>flag</span></p>
+          <h1 class="hero__headline">Deploy com a calma do gopher.</h1>
+          <p class="hero__lead">
+            Rollout gradual, kill switch em um PATCH e cache local no SDK.
+            O ambiente pode esquentar — com flags, this is fine.
+          </p>
+          <div class="btn-group">
+            <a class="btn btn--primary" href="getting-started.html">Começar agora</a>
+            <a class="btn btn--ghost" href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener"
+              >Ver no GitHub</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="fine-band" id="fine">
+        <div class="wrap fine-band__inner">
+          <div class="fine-band__copy reveal">
+            <p class="section__eyebrow">Tranquilidade no deploy</p>
+            <h2 class="section__title">Sem precisar torcer para o café apagar o incêndio.</h2>
+            <p class="section__text">
+              Ligue features por percentual, restrinja por sessão e desligue tudo em segundos se algo der errado.
+              Segurança operacional sem drama — e sem rollback de emergência às 3 da manhã.
+            </p>
+            <p class="fine-quote">this is fine.</p>
+          </div>
+          <figure class="fine-band__art reveal">
+            <img
+              src="assets/img/this-is-fine-gopher.jpg"
+              alt="Gopher do Go no meme This is Fine, sentado calmamente enquanto o ambiente pega fogo"
+              width="1200"
+              height="675"
+            />
+            <figcaption class="fine-band__caption">
+              Sem flags: o deploy é o painel da esquerda. Com featureflag: você controla o fogo.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="cap">
+        <div class="wrap">
+          <div class="section__head reveal">
+            <p class="section__eyebrow">Dois domínios · um serviço</p>
+            <h2 class="section__title">Escolha o trade-off CAP certo para cada caso.</h2>
+            <p class="section__text">
+              Feature Flag prioriza disponibilidade. Content Hub prioriza o valor mais fresco. Você usa os dois no
+              mesmo runtime.
+            </p>
+          </div>
+          <div class="cap-grid reveal">
+            <article class="cap">
+              <span class="cap__tag">AP · Availability</span>
+              <h3>Feature Flag</h3>
+              <p>
+                O SDK mantém cache local e refresca via HTTP periódico. A aplicação sempre recebe uma resposta — mesmo
+                com falha de rede. Ideal para toggles, A/B e rollouts graduais.
+              </p>
+            </article>
+            <article class="cap">
+              <span class="cap__tag">CP · Consistency</span>
+              <h3>Content Hub</h3>
+              <p>
+                Conteúdo dinâmico com leitura sempre atual. Estratégias por sessão e balanceamento ponderado para
+                banners, configs JSON e experiências personalizadas.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="por-que">
+        <div class="wrap split">
+          <div class="reveal">
+            <div class="section__head" style="margin-bottom: 1.5rem">
+              <p class="section__eyebrow">Por que usar</p>
+              <h2 class="section__title">Feito em Go, para times que fazem ship toda semana.</h2>
+              <p class="section__text">
+                Latência baixa, disponibilidade alta e um kill switch quando o café não for suficiente.
+              </p>
+            </div>
+            <div class="feature-list">
+              <div class="feature-row">
+                <h3>Kill switch</h3>
+                <p>Desligue uma feature em produção com um PATCH — sem redeploy, sem pânico.</p>
+              </div>
+              <div class="feature-row">
+                <h3>Rollout seguro</h3>
+                <p>Percentual para A/B e session_id para liberar só quem você escolheu.</p>
+              </div>
+              <div class="feature-row">
+                <h3>Cache local</h3>
+                <p>SDK em memória — tipicamente &lt; 10ms. A app responde mesmo se a rede vacilar.</p>
+              </div>
+              <div class="feature-row">
+                <h3>Multi-project</h3>
+                <p>Flags isoladas por project no path. Times e serviços convivem sem colisão de chaves.</p>
+              </div>
+            </div>
+          </div>
+          <div class="reveal">
+            <div class="code">
+              <div class="code__bar">
+                <span>go get</span>
+                <button type="button" class="code__copy" data-copy="#install-cmd">Copiar</button>
+              </div>
+              <pre id="install-cmd"><span class="tok-cm"># SDK</span>
+go get -u github.com/IsaacDSC/featureflag
+
+<span class="tok-cm"># servidor local</span>
+docker-compose up -d</pre>
+            </div>
+            <div class="code" style="margin-top: 1rem">
+              <div class="code__bar"><span>main.go</span></div>
+              <pre><span class="tok-fn">ff</span> := featureflag.NewFeatureFlagSDK(
+  <span class="tok-str">"http://localhost:3000"</span>,
+  <span class="tok-str">"checkout"</span>,
+)
+
+go ff.Listenner(ctx)
+
+active := ff.GetFeatureFlag(<span class="tok-str">"checkout_v2"</span>).Val()</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="section__head reveal">
+            <p class="section__eyebrow">Quando usar</p>
+            <h2 class="section__title">Bom encaixe para estes cenários.</h2>
+          </div>
+          <div class="table-wrap reveal">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cenário</th>
+                  <th>Por quê</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Apps de alta demanda</td>
+                  <td>Decisões de flag sem latência de rede em cada request</td>
+                </tr>
+                <tr>
+                  <td>Eventual consistency ok</td>
+                  <td>Propagação em segundos via polling é aceitável</td>
+                </tr>
+                <tr>
+                  <td>Conteúdo dinâmico</td>
+                  <td>Content Hub com sessão e pesos para personalização</td>
+                </tr>
+                <tr>
+                  <td>Volume controlado</td>
+                  <td>Melhor com dezenas a centenas de flags por project</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <div class="wrap cta-band__inner reveal">
+          <div>
+            <h2>Pronto para um deploy mais fine?</h2>
+            <p>Suba o servidor, instale o SDK Go e crie sua primeira flag em minutos.</p>
+          </div>
+          <div class="btn-group">
+            <a class="btn btn--primary" href="getting-started.html">Abrir docs</a>
+            <a class="btn btn--ghost" href="feature-flags.html">Feature Flags</a>
+            <a class="btn btn--ghost" href="content-hub.html">Content Hub</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <span>featureflag · open source · MIT</span>
+        <a href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener">github.com/IsaacDSC/featureflag</a>
+      </div>
+    </footer>
+
+    <script src="assets/js/site.js"></script>
+  </body>
+</html>

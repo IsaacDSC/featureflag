@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arquitetura · featureflag</title>
+    <meta name="description" content="Arquitetura do featureflag: SDK, polling e servidor." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,550;0,9..40,650;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/site.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true"></span>
+          featureflag
+        </a>
+        <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Abrir menu">☰</button>
+        <ul class="nav__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="getting-started.html">Docs</a></li>
+          <li><a href="feature-flags.html">Flags</a></li>
+          <li><a href="content-hub.html">Content Hub</a></li>
+          <li>
+            <a class="nav__cta" href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="wrap docs-layout">
+      <aside class="docs-side">
+        <h2>Documentação</h2>
+        <ul>
+          <li><a href="getting-started.html">Começar</a></li>
+          <li><a href="feature-flags.html">Feature Flags</a></li>
+          <li><a href="content-hub.html">Content Hub</a></li>
+          <li><a href="architecture.html" aria-current="page">Arquitetura</a></li>
+        </ul>
+      </aside>
+
+      <article class="docs-main">
+        <h1>Arquitetura</h1>
+        <p class="lead">
+          App → SDK (cache + polling) → servidor HTTP → MongoDB ou JSON file. Avaliação de flag acontece localmente
+          no processo da aplicação.
+        </p>
+
+        <figure class="arch-diagram" aria-label="Diagrama simplificado da arquitetura">
+          <svg viewBox="0 0 720 220" role="img" xmlns="http://www.w3.org/2000/svg">
+            <title>App consulta o SDK em memória; o SDK faz polling no servidor, que lê e escreve no repositório</title>
+
+            <!-- App -->
+            <rect x="24" y="56" width="130" height="88" rx="14" fill="#0c2340" />
+            <text x="89" y="96" text-anchor="middle" fill="#f5fafc" font-family="Syne, sans-serif" font-size="18" font-weight="700">App</text>
+            <text x="89" y="118" text-anchor="middle" fill="#8eb4c8" font-family="DM Sans, sans-serif" font-size="12">sua aplicação</text>
+
+            <!-- arrow App → SDK -->
+            <path d="M162 100 H198" stroke="#007d9c" stroke-width="2.5" fill="none" />
+            <polygon points="198,94 212,100 198,106" fill="#007d9c" />
+            <text x="187" y="88" text-anchor="middle" fill="#4a657c" font-family="DM Sans, sans-serif" font-size="11">local</text>
+
+            <!-- SDK -->
+            <rect x="220" y="48" width="150" height="104" rx="14" fill="#00add8" />
+            <text x="295" y="88" text-anchor="middle" fill="#0c2340" font-family="Syne, sans-serif" font-size="18" font-weight="700">SDK</text>
+            <text x="295" y="110" text-anchor="middle" fill="#0c2340" font-family="DM Sans, sans-serif" font-size="12">cache em memória</text>
+            <text x="295" y="128" text-anchor="middle" fill="#0c2340" font-family="DM Sans, sans-serif" font-size="12" opacity="0.75">avalia a flag</text>
+
+            <!-- arrow SDK → Server (polling) -->
+            <path d="M378 100 H414" stroke="#007d9c" stroke-width="2.5" fill="none" stroke-dasharray="6 4" />
+            <polygon points="414,94 428,100 414,106" fill="#007d9c" />
+            <text x="403" y="88" text-anchor="middle" fill="#4a657c" font-family="DM Sans, sans-serif" font-size="11">polling</text>
+
+            <!-- Server -->
+            <rect x="436" y="48" width="130" height="104" rx="14" fill="#007d9c" />
+            <text x="501" y="88" text-anchor="middle" fill="#f5fafc" font-family="Syne, sans-serif" font-size="18" font-weight="700">Server</text>
+            <text x="501" y="110" text-anchor="middle" fill="#d7ecf5" font-family="DM Sans, sans-serif" font-size="12">HTTP API</text>
+            <text x="501" y="128" text-anchor="middle" fill="#d7ecf5" font-family="DM Sans, sans-serif" font-size="12" opacity="0.8">:3000</text>
+
+            <!-- arrow Server → Store -->
+            <path d="M574 100 H610" stroke="#007d9c" stroke-width="2.5" fill="none" />
+            <polygon points="610,94 624,100 610,106" fill="#007d9c" />
+            <text x="599" y="88" text-anchor="middle" fill="#4a657c" font-family="DM Sans, sans-serif" font-size="11">R/W</text>
+
+            <!-- Store (cylinder-ish) -->
+            <ellipse cx="662" cy="64" rx="42" ry="14" fill="#5dc9e2" />
+            <rect x="620" y="64" width="84" height="72" fill="#5dc9e2" />
+            <ellipse cx="662" cy="136" rx="42" ry="14" fill="#00add8" />
+            <ellipse cx="662" cy="64" rx="42" ry="14" fill="#7dd8ea" />
+            <text x="662" y="108" text-anchor="middle" fill="#0c2340" font-family="Syne, sans-serif" font-size="14" font-weight="700">Store</text>
+            <text x="662" y="126" text-anchor="middle" fill="#0c2340" font-family="DM Sans, sans-serif" font-size="11">Mongo / JSON</text>
+
+            <!-- legend -->
+            <text x="360" y="200" text-anchor="middle" fill="#4a657c" font-family="DM Sans, sans-serif" font-size="12">
+              avaliação sem rede · mudanças chegam no próximo poll
+            </text>
+          </svg>
+          <figcaption class="arch-diagram__caption">
+            Fluxo simplificado: a app fala só com o SDK; o servidor sincroniza o cache via polling.
+          </figcaption>
+        </figure>
+
+        <h2>Componentes</h2>
+        <div class="feature-list">
+          <div class="feature-row">
+            <h3>SDK</h3>
+            <p>
+              Busca todas as flags na inicialização, mantém mapa em memória e refresca no intervalo de
+              <code>WithEventualConsistency</code>. Diff preserva contadores locais de strategy (<code>QtdCall</code>).
+            </p>
+          </div>
+          <div class="feature-row">
+            <h3>Servidor</h3>
+            <p>
+              Go stdlib <code>net/http</code>. Handlers por domínio, serviços com interfaces Adapter/Publisher,
+              repositórios jsonfile ou MongoDB.
+            </p>
+          </div>
+          <div class="feature-row">
+            <h3>Persistência</h3>
+            <p>
+              <code>REPOSITORY_TYPE=jsonfile</code> (default) ou <code>mongodb</code>. Docker Compose usa MongoDB.
+            </p>
+          </div>
+        </div>
+
+        <h2>Fluxo de dados</h2>
+        <ol>
+          <li><strong>Load inicial</strong> — SDK busca todas as flags do project.</li>
+          <li><strong>Avaliação</strong> — app consulta o SDK; resposta vem do cache (sem rede).</li>
+          <li><strong>Update</strong> — API persiste no repositório.</li>
+          <li><strong>Propagação</strong> — cada SDK pega a mudança no próximo poll (eventual consistency).</li>
+        </ol>
+
+        <h2>Quando NÃO usar</h2>
+        <ul>
+          <li>Precisa de consistência forte imediata em todas as flags</li>
+          <li>Milhares de flags com segmentação avançada / auditoria completa</li>
+          <li>Ambiente sem RAM suficiente para cache do SDK</li>
+        </ul>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <span>featureflag · docs</span>
+        <a href="getting-started.html">← Começar</a>
+      </div>
+    </footer>
+    <script src="assets/js/site.js"></script>
+  </body>
+</html>
