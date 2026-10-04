@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feature Flags · featureflag</title>
+    <meta name="description" content="API e SDK de feature flags: circuit breaker, percentual e session_id." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,550;0,9..40,650;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/site.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true"></span>
+          featureflag
+        </a>
+        <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Abrir menu">☰</button>
+        <ul class="nav__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="getting-started.html">Docs</a></li>
+          <li><a href="feature-flags.html" aria-current="page">Flags</a></li>
+          <li><a href="content-hub.html">Content Hub</a></li>
+          <li>
+            <a class="nav__cta" href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="wrap docs-layout">
+      <aside class="docs-side">
+        <h2>Documentação</h2>
+        <ul>
+          <li><a href="getting-started.html">Começar</a></li>
+          <li><a href="feature-flags.html" aria-current="page">Feature Flags</a></li>
+          <li><a href="content-hub.html">Content Hub</a></li>
+          <li><a href="architecture.html">Arquitetura</a></li>
+        </ul>
+      </aside>
+
+      <article class="docs-main">
+        <h1>Feature Flags</h1>
+        <p class="lead">
+          Modelo AP: o SDK cacheia flags do <code>project</code> e atualiza por polling. Mudanças chegam no próximo
+          ciclo de refresh — não há server-push.
+        </p>
+
+        <div class="callout">
+          <strong>Escopo por project.</strong> Rotas usam
+          <code>/featureflag/{project}/...</code>. O project deve casar com
+          <code>^[a-z0-9][a-z0-9-]{0,63}$</code>.
+        </div>
+
+        <h2>Rotas</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Método &amp; path</th>
+                <th>Descrição</th>
+                <th>Auth</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>PATCH /featureflag/{project}</code></td>
+                <td>Cria/atualiza uma flag</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><code>GET /featureflag/{project}/all</code></td>
+                <td>Lista todas as flags do project</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><code>GET /featureflag/{project}/{key}</code></td>
+                <td>Busca uma flag (<code>session_id</code> opcional)</td>
+                <td>SERVICE_CLIENT</td>
+              </tr>
+              <tr>
+                <td><code>GET /featureflag/{project}/sdk/{key}</code></td>
+                <td>Leitura via SDK</td>
+                <td>SDK_CLIENT</td>
+              </tr>
+              <tr>
+                <td><code>DELETE /featureflag/{project}/{key}</code></td>
+                <td>Remove uma flag</td>
+                <td>SERVICE_CLIENT</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>Circuit breaker (on/off)</h2>
+        <div class="code">
+          <div class="code__bar"><span>curl</span></div>
+          <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_name": "checkout_v2",
+    "description": "novo checkout",
+    "active": true
+  }'</pre>
+        </div>
+
+        <h2>Percentual (A/B)</h2>
+        <p>50% das avaliações ativas, 50% inativas — útil para rollout gradual.</p>
+        <div class="code">
+          <div class="code__bar"><span>curl</span></div>
+          <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_name": "rollout_50",
+    "active": true,
+    "strategy": { "percent": 50 }
+  }'</pre>
+        </div>
+
+        <h2>Session ID</h2>
+        <p>Só sessões listadas recebem a flag como ativa.</p>
+        <div class="code">
+          <div class="code__bar"><span>curl</span></div>
+          <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "flag_name": "beta_users",
+    "active": true,
+    "strategy": {
+      "session_id": ["34eec623-c9f2-494e-bf66-57a85139fd69"]
+    }
+  }'</pre>
+        </div>
+
+        <h2>Uso no SDK</h2>
+        <p>
+          Instancie com <code>host</code> + <code>project</code>.
+          <code>Listenner</code> bloqueia até o contexto cancelar — rode em goroutine.
+          <code>WithEventualConsistency</code> define o intervalo de refresh.
+        </p>
+        <div class="code">
+          <div class="code__bar"><span>Go</span></div>
+          <pre>ff := featureflag.NewFeatureFlagSDK(<span class="tok-str">"http://localhost:3000"</span>, <span class="tok-str">"checkout"</span>).
+  WithEventualConsistency(30 * time.Second)
+
+go func() {
+  if _, err := ff.Listenner(ctx); err != nil {
+    panic(err)
+  }
+}()
+
+on := ff.GetFeatureFlag(<span class="tok-str">"checkout_v2"</span>).WithDefault(<span class="tok-key">false</span>)
+pct, err := ff.GetFeatureFlag(<span class="tok-str">"rollout_50"</span>).Err()
+beta, _ := ff.GetFeatureFlag(<span class="tok-str">"beta_users"</span>, sessionID).Err()</pre>
+        </div>
+
+        <h2>Listar / buscar / remover</h2>
+        <div class="code">
+          <div class="code__bar"><span>shell</span></div>
+          <pre><span class="tok-cm"># listar</span>
+curl http://localhost:3000/featureflag/checkout/all
+
+<span class="tok-cm"># buscar (SERVICE_CLIENT)</span>
+curl http://localhost:3000/featureflag/checkout/checkout_v2 \
+  -H "Authorization: service"
+
+<span class="tok-cm"># SDK route</span>
+curl http://localhost:3000/featureflag/checkout/sdk/rollout_50 \
+  -H "Authorization: sdk"
+
+<span class="tok-cm"># remover</span>
+curl -X DELETE http://localhost:3000/featureflag/checkout/beta_users \
+  -H "Authorization: service"</pre>
+        </div>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <span>featureflag · docs</span>
+        <a href="content-hub.html">Content Hub →</a>
+      </div>
+    </footer>
+    <script src="assets/js/site.js"></script>
+  </body>
+</html>

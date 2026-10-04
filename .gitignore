@@ -5,3 +5,6 @@ client.http
 .env
 *secrets*
 .secrets
+ff.db*
+ff.db
+.env.*

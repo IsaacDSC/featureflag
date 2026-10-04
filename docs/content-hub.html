@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Content Hub · featureflag</title>
+    <meta name="description" content="Content Hub com consistência forte, sessão e balanceamento ponderado." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,550;0,9..40,650;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/site.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <div class="wrap nav__inner">
+        <a class="brand" href="index.html">
+          <span class="brand__mark" aria-hidden="true"></span>
+          featureflag
+        </a>
+        <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Abrir menu">☰</button>
+        <ul class="nav__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="getting-started.html">Docs</a></li>
+          <li><a href="feature-flags.html">Flags</a></li>
+          <li><a href="content-hub.html" aria-current="page">Content Hub</a></li>
+          <li>
+            <a class="nav__cta" href="https://github.com/IsaacDSC/featureflag" target="_blank" rel="noopener"
+              >GitHub</a
+            >
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="wrap docs-layout">
+      <aside class="docs-side">
+        <h2>Documentação</h2>
+        <ul>
+          <li><a href="getting-started.html">Começar</a></li>
+          <li><a href="feature-flags.html">Feature Flags</a></li>
+          <li><a href="content-hub.html" aria-current="page">Content Hub</a></li>
+          <li><a href="architecture.html">Arquitetura</a></li>
+        </ul>
+      </aside>
+
+      <article class="docs-main">
+        <h1>Content Hub</h1>
+        <p class="lead">
+          Modelo CP: conteúdo dinâmico com o valor mais recente. Não é escopado por <code>project</code>. Suporta
+          personalização por sessão e distribuição ponderada.
+        </p>
+
+        <h2>Rotas</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Método &amp; path</th>
+                <th>Descrição</th>
+                <th>Chave</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>PATCH /contenthub</code></td>
+                <td>Cria/atualiza conteúdo</td>
+                <td>body <code>key</code></td>
+              </tr>
+              <tr>
+                <td><code>GET /contenthubs</code></td>
+                <td>Lista todos</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><code>GET /contenthub/{key}</code></td>
+                <td>Busca um conteúdo</td>
+                <td>query <code>?key=</code></td>
+              </tr>
+              <tr>
+                <td><code>GET /contenthub/sdk/{key}</code></td>
+                <td>Leitura via SDK</td>
+                <td>path</td>
+              </tr>
+              <tr>
+                <td><code>DELETE /contenthub/{key}</code></td>
+                <td>Remove</td>
+                <td>query <code>?key=</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>Atenção:</strong> a lista usa <code>/contenthubs</code> (plural). Em GET/DELETE a chave vem do
+          query <code>?key=</code> — o segmento do path precisa existir só para casar a rota.
+        </div>
+
+        <h2>Criar conteúdo com estratégias</h2>
+        <p>
+          <code>session_strategy</code> devolve respostas por <code>session_id</code> (inclua
+          <code>default</code>). <code>balancer_strategy</code> distribui por peso.
+        </p>
+        <div class="code">
+          <div class="code__bar"><span>curl</span></div>
+          <pre>curl -X PATCH http://localhost:3000/contenthub \
+  -H "Content-Type: application/json" \
+  -d '{
+  "key": "homepage_banner",
+  "value": "enabled",
+  "description": "Banner principal",
+  "active": true,
+  "session_strategy": [
+    {
+      "session_id": "session-primers-123",
+      "response": {
+        "title": "Black Friday - 50% OFF",
+        "ctaText": "Shop Now"
+      }
+    },
+    {
+      "session_id": "default",
+      "response": {
+        "title": "Fique de olho nas promoções",
+        "ctaText": "Ver ofertas"
+      }
+    }
+  ],
+  "balancer_strategy": [
+    { "weight": 50, "response": { "title": "Black Friday - 50% OFF" } },
+    { "weight": 40, "response": { "title": "Nova coleção" } },
+    { "weight": 10, "response": { "title": "Bem-vindo" } }
+  ]
+}'</pre>
+        </div>
+
+        <h2>SDK</h2>
+        <p>Instancie só com o <code>host</code>. O listener carrega <code>/contenthubs</code> e faz polling.</p>
+        <div class="code">
+          <div class="code__bar"><span>Go</span></div>
+          <pre>hub := contenthub.NewContenthubSDK(<span class="tok-str">"http://localhost:3000"</span>)
+go hub.Listenner(ctx)
+
+raw, err := hub.Content(<span class="tok-str">"homepage_banner"</span>).Err()
+personalized, _ := hub.Content(<span class="tok-str">"homepage_banner"</span>, sessionID).Err()</pre>
+        </div>
+
+        <h2>Operações comuns</h2>
+        <div class="code">
+          <div class="code__bar"><span>shell</span></div>
+          <pre>curl http://localhost:3000/contenthubs
+
+curl "http://localhost:3000/contenthub/x?key=homepage_banner"
+
+curl http://localhost:3000/contenthub/sdk/homepage_banner
+
+curl -X DELETE "http://localhost:3000/contenthub/x?key=homepage_banner"</pre>
+        </div>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <span>featureflag · docs</span>
+        <a href="architecture.html">Arquitetura →</a>
+      </div>
+    </footer>
+    <script src="assets/js/site.js"></script>
+  </body>
+</html>
