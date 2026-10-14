@@ -50,13 +50,15 @@
         <h1>Feature Flags</h1>
         <p class="lead">
           Modelo AP: o SDK cacheia flags do <code>project</code> e atualiza por polling. Mudanças chegam no próximo
-          ciclo de refresh — não há server-push.
+          ciclo de refresh — não há server-push. Você também pode ler e gerenciar flags via HTTP (curl).
         </p>
 
         <div class="callout">
           <strong>Escopo por project.</strong> Rotas usam
           <code>/featureflag/{project}/...</code>. O project deve casar com
-          <code>^[a-z0-9][a-z0-9-]{0,63}$</code>.
+          <code>^[a-z0-9][a-z0-9-]{0,63}$</code>. Nos exemplos, o token de serviço é
+          <code>service</code> e o do SDK é <code>sdk</code> (valores de
+          <code>SERVICE_CLIENT_AT</code> / <code>SDK_CLIENT_AT</code>).
         </div>
 
         <h2>Rotas</h2>
@@ -73,63 +75,86 @@
               <tr>
                 <td><code>PATCH /featureflag/{project}</code></td>
                 <td>Cria/atualiza uma flag</td>
-                <td>—</td>
+                <td>SERVICE_CLIENT ou login</td>
               </tr>
               <tr>
                 <td><code>GET /featureflag/{project}/all</code></td>
                 <td>Lista todas as flags do project</td>
-                <td>—</td>
+                <td>SERVICE_CLIENT ou login</td>
               </tr>
               <tr>
                 <td><code>GET /featureflag/{project}/{key}</code></td>
                 <td>Busca uma flag (<code>session_id</code> opcional)</td>
-                <td>SERVICE_CLIENT</td>
+                <td>SERVICE_CLIENT ou login</td>
               </tr>
               <tr>
                 <td><code>GET /featureflag/{project}/sdk/{key}</code></td>
-                <td>Leitura via SDK</td>
+                <td>Leitura booleana (status avaliativo)</td>
                 <td>SDK_CLIENT</td>
               </tr>
               <tr>
                 <td><code>DELETE /featureflag/{project}/{key}</code></td>
                 <td>Remove uma flag</td>
-                <td>SERVICE_CLIENT</td>
+                <td>SERVICE_CLIENT ou login</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <h2>Circuit breaker (on/off)</h2>
-        <div class="code">
-          <div class="code__bar"><span>curl</span></div>
-          <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+        <h2>API HTTP (curl)</h2>
+        <p>
+          Use estes exemplos para criar, ler e remover flags sem o SDK. Headers
+          <code>Authorization</code> levam o valor cru do token (sem prefixo
+          <code>Bearer</code>).
+        </p>
+
+        <div class="http-example">
+          <h3>Criar / atualizar (circuit breaker)</h3>
+          <p>Flag simples on/off, sem strategy. Resposta sem corpo.</p>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -i -X PATCH http://localhost:3000/featureflag/checkout \
   -H "Content-Type: application/json" \
+  -H "Authorization: service" \
   -d '{
     "flag_name": "checkout_v2",
-    "description": "novo checkout",
     "active": true
   }'</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 204</span></div>
+            <pre><span class="tok-cm">HTTP/1.1 204 No Content</span></pre>
+          </div>
         </div>
 
-        <h2>Percentual (A/B)</h2>
-        <p>50% das avaliações ativas, 50% inativas — útil para rollout gradual.</p>
-        <div class="code">
-          <div class="code__bar"><span>curl</span></div>
-          <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+        <div class="http-example">
+          <h3>Criar com percentual (A/B)</h3>
+          <p>50% das avaliações ativas, 50% inativas — útil para rollout gradual.</p>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -i -X PATCH http://localhost:3000/featureflag/checkout \
   -H "Content-Type: application/json" \
+  -H "Authorization: service" \
   -d '{
     "flag_name": "rollout_50",
     "active": true,
     "strategy": { "percent": 50 }
   }'</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 204</span></div>
+            <pre><span class="tok-cm">HTTP/1.1 204 No Content</span></pre>
+          </div>
         </div>
 
-        <h2>Session ID</h2>
-        <p>Só sessões listadas recebem a flag como ativa.</p>
-        <div class="code">
-          <div class="code__bar"><span>curl</span></div>
-          <pre>curl -X PATCH http://localhost:3000/featureflag/checkout \
+        <div class="http-example">
+          <h3>Criar com session_id</h3>
+          <p>Só as sessões listadas recebem a flag como ativa.</p>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -i -X PATCH http://localhost:3000/featureflag/checkout \
   -H "Content-Type: application/json" \
+  -H "Authorization: service" \
   -d '{
     "flag_name": "beta_users",
     "active": true,
@@ -137,13 +162,145 @@
       "session_id": ["34eec623-c9f2-494e-bf66-57a85139fd69"]
     }
   }'</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 204</span></div>
+            <pre><span class="tok-cm">HTTP/1.1 204 No Content</span></pre>
+          </div>
+        </div>
+
+        <div class="http-example">
+          <h3>Ler uma flag</h3>
+          <p>
+            Retorna o DTO da flag. Header opcional <code>session_id</code> aplica a strategy
+            e reflete o resultado em <code>active</code>.
+          </p>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -s http://localhost:3000/featureflag/checkout/checkout_v2 \
+  -H "Accept: application/json" \
+  -H "Authorization: service"</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 200</span></div>
+            <pre>{
+  <span class="tok-key">"project"</span>: <span class="tok-str">"checkout"</span>,
+  <span class="tok-key">"flag_name"</span>: <span class="tok-str">"checkout_v2"</span>,
+  <span class="tok-key">"active"</span>: <span class="tok-key">true</span>
+}</pre>
+          </div>
+        </div>
+
+        <div class="http-example">
+          <h3>Ler com session_id</h3>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -s http://localhost:3000/featureflag/checkout/beta_users \
+  -H "Accept: application/json" \
+  -H "Authorization: service" \
+  -H "session_id: 34eec623-c9f2-494e-bf66-57a85139fd69"</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 200</span></div>
+            <pre>{
+  <span class="tok-key">"project"</span>: <span class="tok-str">"checkout"</span>,
+  <span class="tok-key">"flag_name"</span>: <span class="tok-str">"beta_users"</span>,
+  <span class="tok-key">"active"</span>: <span class="tok-key">true</span>,
+  <span class="tok-key">"strategy"</span>: {
+    <span class="tok-key">"session_id"</span>: [<span class="tok-str">"34eec623-c9f2-494e-bf66-57a85139fd69"</span>]
+  }
+}</pre>
+          </div>
+        </div>
+
+        <div class="http-example">
+          <h3>Leitura via rota SDK</h3>
+          <p>Devolve só o status avaliativo (<code>true</code>/<code>false</code> como string).</p>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -s http://localhost:3000/featureflag/checkout/sdk/rollout_50 \
+  -H "Accept: application/json" \
+  -H "Authorization: sdk"</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 200</span></div>
+            <pre>{<span class="tok-key">"status"</span>: <span class="tok-str">"true"</span>}</pre>
+          </div>
+        </div>
+
+        <div class="http-example">
+          <h3>Listar todas as flags do project</h3>
+          <p>Retorna as entidades persistidas (inclui <code>id</code>, <code>strategy</code> e <code>created_at</code>).</p>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -s http://localhost:3000/featureflag/checkout/all \
+  -H "Accept: application/json" \
+  -H "Authorization: service"</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 200</span></div>
+            <pre>[
+  {
+    <span class="tok-key">"id"</span>: <span class="tok-str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+    <span class="tok-key">"project"</span>: <span class="tok-str">"checkout"</span>,
+    <span class="tok-key">"flag_name"</span>: <span class="tok-str">"checkout_v2"</span>,
+    <span class="tok-key">"strategy"</span>: {
+      <span class="tok-key">"with_strategy"</span>: <span class="tok-key">false</span>,
+      <span class="tok-key">"session_id"</span>: {},
+      <span class="tok-key">"percent"</span>: 0,
+      <span class="tok-key">"qtd_call"</span>: 0
+    },
+    <span class="tok-key">"active"</span>: <span class="tok-key">true</span>,
+    <span class="tok-key">"created_at"</span>: <span class="tok-str">"2026-10-14T12:00:00Z"</span>
+  },
+  {
+    <span class="tok-key">"id"</span>: <span class="tok-str">"b2c3d4e5-f6a7-8901-bcde-f12345678901"</span>,
+    <span class="tok-key">"project"</span>: <span class="tok-str">"checkout"</span>,
+    <span class="tok-key">"flag_name"</span>: <span class="tok-str">"rollout_50"</span>,
+    <span class="tok-key">"strategy"</span>: {
+      <span class="tok-key">"with_strategy"</span>: <span class="tok-key">true</span>,
+      <span class="tok-key">"session_id"</span>: {},
+      <span class="tok-key">"percent"</span>: 50,
+      <span class="tok-key">"qtd_call"</span>: 0
+    },
+    <span class="tok-key">"active"</span>: <span class="tok-key">true</span>,
+    <span class="tok-key">"created_at"</span>: <span class="tok-str">"2026-10-14T12:01:00Z"</span>
+  }
+]</pre>
+          </div>
+        </div>
+
+        <div class="http-example">
+          <h3>Remover uma flag</h3>
+          <div class="code">
+            <div class="code__bar"><span>Request</span></div>
+            <pre>curl -i -X DELETE http://localhost:3000/featureflag/checkout/beta_users \
+  -H "Authorization: service"</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 204</span></div>
+            <pre><span class="tok-cm">HTTP/1.1 204 No Content</span></pre>
+          </div>
+        </div>
+
+        <div class="http-example">
+          <h3>Erros comuns</h3>
+          <div class="code">
+            <div class="code__bar"><span>Response 404</span></div>
+            <pre>feature flag not found</pre>
+          </div>
+          <div class="code">
+            <div class="code__bar"><span>Response 401 / 403</span></div>
+            <pre><span class="tok-cm"># sem Authorization válido, ou sem acesso ao project (login humano)</span></pre>
+          </div>
         </div>
 
         <h2>Uso no SDK</h2>
         <p>
           Instancie com <code>host</code> + <code>project</code>.
           <code>Listenner</code> bloqueia até o contexto cancelar — rode em goroutine.
-          <code>WithEventualConsistency</code> define o intervalo de refresh.
+          <code>WithEventualConsistency</code> define o intervalo de refresh. A app avalia
+          flags no cache local (sem rede por chamada).
         </p>
         <div class="code">
           <div class="code__bar"><span>Go</span></div>
@@ -159,25 +316,6 @@ go func() {
 on := ff.GetFeatureFlag(<span class="tok-str">"checkout_v2"</span>).WithDefault(<span class="tok-key">false</span>)
 pct, err := ff.GetFeatureFlag(<span class="tok-str">"rollout_50"</span>).Err()
 beta, _ := ff.GetFeatureFlag(<span class="tok-str">"beta_users"</span>, sessionID).Err()</pre>
-        </div>
-
-        <h2>Listar / buscar / remover</h2>
-        <div class="code">
-          <div class="code__bar"><span>shell</span></div>
-          <pre><span class="tok-cm"># listar</span>
-curl http://localhost:3000/featureflag/checkout/all
-
-<span class="tok-cm"># buscar (SERVICE_CLIENT)</span>
-curl http://localhost:3000/featureflag/checkout/checkout_v2 \
-  -H "Authorization: service"
-
-<span class="tok-cm"># SDK route</span>
-curl http://localhost:3000/featureflag/checkout/sdk/rollout_50 \
-  -H "Authorization: sdk"
-
-<span class="tok-cm"># remover</span>
-curl -X DELETE http://localhost:3000/featureflag/checkout/beta_users \
-  -H "Authorization: service"</pre>
         </div>
       </article>
     </div>
